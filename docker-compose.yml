@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: ${PORT:-3000}
+      PORT: 3000
       DATABASE_URL: mysql://${DB_USER:-lokal_lens_user}:${DB_PASSWORD:-lokal_lens_password}@mysql:3306/${DB_NAME:-lokal-lens}?timezone=Asia/Jakarta
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
