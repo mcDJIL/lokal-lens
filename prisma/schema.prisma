@@ -7,10 +7,288 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  user
+  admin
+  contributor
+  officer
+}
+
+enum BadgeCategory {
+  explorer
+  collector
+  master
+  social
+  special
+}
+
+enum ChallengeCategory {
+  scan
+  quiz
+  article
+  exploration
+  social
+}
+
+enum ChallengeDifficulty {
+  easy
+  medium
+  hard
+}
+
+enum CultureCategory {
+  tarian
+  musik
+  pakaian
+  arsitektur
+  kuliner
+  upacara
+  kerajinan
+  senjata
+  permainan
+  bahasa
+}
+
+enum CultureStatus {
+  active
+  inactive
+  draft
+}
+
 model User {
+  id                    Int                     @id @default(autoincrement())
+  email                 String                  @unique
+  password              String
+  fullName              String                  @map("full_name")
+  role                  UserRole                @default(user)
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
+  
+  profile               Profile?
+  articles              Article[]
+  articleComments       ArticleComment[]
+  certificates          Certificate[]
+  userBadges            UserBadge[]
+  userCompleteChallenges UserCompleteChallenge[]
+  articleBookmarks      UserArticleBookmark[]
+  commentVotes          UserCommentVote[]
+
+  @@map("users")
+}
+
+model Profile {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique @map("user_id")
+  bio              String?  @db.Text
+  avatar           String?
+  provincesVisited Int      @default(0) @map("provinces_visited")
+  badgesEarned     Int      @default(0) @map("badges_earned")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Article {
+  id            Int       @id @default(autoincrement())
+  title         String
+  slug          String    @unique
+  excerpt       String    @db.Text
+  content       String    @db.LongText
+  featuredImage String    @map("featured_image")
+  authorId      Int       @map("author_id")
+  category      String
+  tags          String?   @db.Text
+  province      String?
+  readTime      Int       @default(5) @map("read_time")
+  views         Int       @default(0)
+  isHighlight   Boolean   @default(false) @map("is_highlight")
+  publishedAt   DateTime  @default(now()) @map("published_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  author    User                    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  ArticleComment[]
+  bookmarks UserArticleBookmark[]
+
+  @@index([slug])
+  @@index([isHighlight])
+  @@index([publishedAt])
+  @@map("articles")
+}
+
+model ArticleComment {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  articleId Int      @map("article_id")
+  userId    Int      @map("user_id")
+  parentId  Int?     @map("parent_id")
+  content   String   @db.Text
+  upvotes   Int      @default(0)
+  downvotes Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  article  Article           @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   ArticleComment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  ArticleComment[]  @relation("CommentReplies")
+  votes    UserCommentVote[]
+
+  @@index([articleId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("article_comments")
+}
+
+model UserArticleBookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  articleId Int      @map("article_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([articleId])
+  @@map("user_article_bookmarks")
+}
+
+model UserCommentVote {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  commentId Int      @map("comment_id")
+  voteType  String   @map("vote_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment ArticleComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("user_comment_votes")
+}
+
+model Badge {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String        @db.Text
+  icon        String
+  category    BadgeCategory
+  requirement String        @db.Text
+  points      Int           @default(0)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  badgeId   Int      @map("badge_id")
+  earnedAt  DateTime @default(now()) @map("earned_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Challenge {
+  id           Int                 @id @default(autoincrement())
+  title        String
+  description  String              @db.Text
+  category     ChallengeCategory
+  difficulty   ChallengeDifficulty
+  points       Int                 @default(0)
+  requirements String              @db.Text
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  
+  userCompleteChallenges UserCompleteChallenge[]
+
+  @@map("challenges")
+}
+
+model UserCompleteChallenge {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  challengeId Int      @map("challenge_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@map("user_complete_challenges")
+}
+
+model Certificate {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  title          String
+  description    String?  @db.Text
+  dateEarned     DateTime @map("date_earned")
+  certificateUrl String?  @map("certificate_url")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+model Culture {
+  id              Int            @id @default(autoincrement())
+  name            String
+  slug            String         @unique
+  subtitle        String?
+  description     String         @db.Text
+  longDescription String?        @map("long_description") @db.Text
+  meaning         String?        @db.Text
+  location        String
+  province        String
+  city            String
+  latitude        Float?
+  longitude       Float?
+  status          CultureStatus  @default(active)
+  isEndangered    Boolean        @default(false) @map("is_endangered")
+  thumbnail       String?
+  mapEmbedUrl     String?        @map("map_embed_url") @db.Text
+  category        CultureCategory?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  
+  images CultureImage[]
+
+  @@index([province])
+  @@index([city])
+  @@index([latitude, longitude])
+  @@index([category])
+  @@map("cultures")
+}
+
+model CultureImage {
+  id           Int      @id @default(autoincrement())
+  cultureId    Int      @map("culture_id")
+  imageUrl     String   @map("image_url")
+  altText      String?  @map("alt_text")
+  isPrimary    Boolean  @default(false) @map("is_primary")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  culture Culture @relation(fields: [cultureId], references: [id], onDelete: Cascade)
+
+  @@index([cultureId])
+  @@map("culture_images")
 }
