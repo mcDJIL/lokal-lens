@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-  relationMode = "prisma"
 }
 
 enum UserRole {
@@ -133,7 +132,7 @@ model ArticleComment {
   
   article  Article           @relation(fields: [articleId], references: [id], onDelete: Cascade)
   user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent   ArticleComment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  parent   ArticleComment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies  ArticleComment[]  @relation("CommentReplies")
   votes    UserCommentVote[]
 
@@ -165,7 +164,7 @@ model UserCommentVote {
   createdAt DateTime @default(now()) @map("created_at")
   
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment ArticleComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  comment ArticleComment @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([userId, commentId])
   @@index([commentId])

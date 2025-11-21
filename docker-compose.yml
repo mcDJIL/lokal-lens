@@ -11,7 +11,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:-lokal_lens_password}
       TZ: Asia/Jakarta
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-4406}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
@@ -39,7 +39,7 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       TZ: Asia/Jakarta
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-13000}:3000"
     depends_on:
       mysql:
         condition: service_healthy
