@@ -1,4 +1,11 @@
 node_modules
 .env
+.env.local
+.env.production
 dist
+logs
+*.log
+.DS_Store
+coverage
+.nyc_output
 lokal-lens.sql
