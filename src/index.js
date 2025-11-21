@@ -29,5 +29,5 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`API Documentation: http://0.0.0.0:${PORT}/api-docs`);
 });
