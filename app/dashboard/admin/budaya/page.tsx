@@ -387,6 +387,39 @@ export default function CulturesListPage() {
     }
   };
 
+  const handleStatusChange = async (culture: Culture, newStatus: string) => {
+    setFormLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/cultures/${culture.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status: newStatus
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        const statusText = newStatus === 'published' ? 'dipublish' : newStatus === 'archive' ? 'diarsipkan' : 'diubah ke draft';
+        alert(`Budaya berhasil ${statusText}`);
+        setShowDetailModal(false);
+        setSelectedCulture(null);
+        fetchCultures();
+      } else {
+        alert(data.error || 'Gagal mengubah status budaya');
+      }
+    } catch (error) {
+      console.error('Error changing status:', error);
+      alert('Terjadi kesalahan saat mengubah status');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1079,26 +1112,59 @@ export default function CulturesListPage() {
 
             <div className="flex items-center gap-3 pt-6 border-t">
               <motion.button
+                type="button"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setSelectedCulture(null);
-                }}
-                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
-              >
-                Tutup
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowDetailModal(false);
-                  handleEdit(selectedCulture);
-                }}
+                onClick={() => handleEdit(selectedCulture)}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
-                ✏️ Edit Budaya
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/>
+                </svg>
+                Edit
+              </motion.button>
+              {selectedCulture.status !== 'archive' && (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleStatusChange(selectedCulture, 'archive')}
+                  disabled={formLoading}
+                  className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z" fill="currentColor"/>
+                  </svg>
+                  Arsipkan
+                </motion.button>
+              )}
+              {selectedCulture.status === 'archive' && (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleStatusChange(selectedCulture, 'published')}
+                  disabled={formLoading}
+                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                  </svg>
+                  Publish
+                </motion.button>
+              )}
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleDeleteClick(selectedCulture)}
+                disabled={formLoading}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
+                </svg>
+                Hapus
               </motion.button>
             </div>
           </div>

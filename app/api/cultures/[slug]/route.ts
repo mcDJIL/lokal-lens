@@ -55,7 +55,7 @@ export async function GET(
       const allCultures = await prisma.culture.findMany({
         where: {
           id: { not: culture.id },
-          status: 'active',
+          status: 'published',
           latitude: { not: null },
           longitude: { not: null },
         },
@@ -95,7 +95,7 @@ export async function GET(
         where: {
           id: { not: culture.id },
           province: culture.province,
-          status: 'active',
+          status: 'published',
         },
         include: {
           images: {

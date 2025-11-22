@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const whereClause: any = {
       latitude: { not: null },
       longitude: { not: null },
-      status: 'active',
+      status: 'published',
     };
 
     // Add category filter if provided (filter by category slug)

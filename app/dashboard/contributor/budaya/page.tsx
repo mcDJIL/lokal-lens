@@ -2,8 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
-import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { motion, AnimatePresence } from 'framer-motion';
+import FormModal from '@/components/ui/FormModal';
+import { motion } from 'framer-motion';
+
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+}
+
+interface CultureImage {
+  id?: number;
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
+  display_order: number;
+}
 
 interface Culture {
   id: number;
@@ -18,13 +33,19 @@ interface Culture {
   location: string;
   latitude?: number;
   longitude?: number;
-  category: string;
+  category_id?: number;
+  category_rel?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
   status: string;
+  rejection_reason?: string;
   is_endangered: boolean;
   thumbnail?: string;
   map_embed_url?: string;
   created_at: string;
-  images?: any[];
+  images?: CultureImage[];
 }
 
 interface FormData {
@@ -34,7 +55,7 @@ interface FormData {
   description: string;
   long_description: string;
   meaning: string;
-  category: string;
+  category_id: string;
   location: string;
   province: string;
   city: string;
@@ -49,6 +70,7 @@ interface FormData {
 export default function CulturesListPage() {
   const { user } = useAuth();
   const [cultures, setCultures] = useState<Culture[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -62,6 +84,13 @@ export default function CulturesListPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   
+  // Image upload states
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<CultureImage[]>([]);
+  
   // Form data
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -70,7 +99,7 @@ export default function CulturesListPage() {
     description: '',
     long_description: '',
     meaning: '',
-    category: '',
+    category_id: '',
     location: '',
     province: '',
     city: '',
@@ -84,18 +113,28 @@ export default function CulturesListPage() {
 
   useEffect(() => {
     fetchCultures();
+    fetchCategories();
   }, [page, search]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories?type=culture');
+      const result = await response.json();
+      if (result.success) {
+        setCategories(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const fetchCultures = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch(
         `/api/admin/cultures?page=${page}&limit=10&search=${search}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: 'include',
         }
       );
       const data = await response.json();
@@ -119,7 +158,7 @@ export default function CulturesListPage() {
       description: '',
       long_description: '',
       meaning: '',
-      category: '',
+      category_id: '',
       location: '',
       province: '',
       city: '',
@@ -130,11 +169,17 @@ export default function CulturesListPage() {
       thumbnail: '',
       map_embed_url: ''
     });
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImages([]);
   };
 
   const handleAdd = () => {
     resetForm();
     setIsEditMode(false);
+    setSelectedCulture(null);
     setShowFormModal(true);
   };
 
@@ -146,7 +191,7 @@ export default function CulturesListPage() {
       description: culture.description || '',
       long_description: culture.long_description || '',
       meaning: culture.meaning || '',
-      category: culture.category || '',
+      category_id: culture.category_id?.toString() || '',
       location: culture.location || '',
       province: culture.province || '',
       city: culture.city || '',
@@ -157,6 +202,8 @@ export default function CulturesListPage() {
       thumbnail: culture.thumbnail || '',
       map_embed_url: culture.map_embed_url || ''
     });
+    setThumbnailPreview(culture.thumbnail || '');
+    setExistingImages(culture.images || []);
     setSelectedCulture(culture);
     setIsEditMode(true);
     setShowFormModal(true);
@@ -192,12 +239,88 @@ export default function CulturesListPage() {
     }
   };
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setImageFiles(prev => [...prev, ...files]);
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (imageId: number) => {
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error);
+    return result.url;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      // Upload thumbnail if new file selected
+      let thumbnailUrl = formData.thumbnail;
+      if (thumbnailFile) {
+        thumbnailUrl = await uploadImage(thumbnailFile);
+      }
+      
+      // Upload new images
+      const newImageUrls = await Promise.all(
+        imageFiles.map(file => uploadImage(file))
+      );
+      
+      const submitData = {
+        ...formData,
+        category_id: formData.category_id ? parseInt(formData.category_id) : null,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        status: isEditMode ? formData.status : 'draft',
+        thumbnail: thumbnailUrl,
+        images: [
+          ...existingImages,
+          ...newImageUrls.map((url, index) => ({
+            image_url: url,
+            alt_text: formData.name,
+            is_primary: false,
+            display_order: existingImages.length + index
+          }))
+        ]
+      };
+      
       const url = isEditMode 
         ? `/api/admin/cultures/${selectedCulture?.id}`
         : '/api/admin/cultures';
@@ -208,14 +331,15 @@ export default function CulturesListPage() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        credentials: 'include',
+        body: JSON.stringify(submitData),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        alert(isEditMode ? 'Budaya berhasil diupdate' : 'Budaya berhasil ditambahkan');
         setShowFormModal(false);
         resetForm();
         fetchCultures();
@@ -235,16 +359,14 @@ export default function CulturesListPage() {
     
     setFormLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/cultures/${selectedCulture.id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       
       const data = await response.json();
       if (data.success) {
+        alert('Budaya berhasil dihapus');
         setShowDeleteDialog(false);
         setSelectedCulture(null);
         fetchCultures();
@@ -267,23 +389,33 @@ export default function CulturesListPage() {
           <h1 className="text-2xl font-bold text-[#1A1A1A]">Kelola Budaya</h1>
           <p className="text-gray-600 mt-1">Manage budaya lokal Indonesia</p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={handleAdd}
-          className="px-6 py-2.5 bg-[#D4A017] text-white rounded-xl font-semibold hover:bg-[#B38B12] transition-colors"
+          className="px-6 py-2.5 bg-[#D4A017] text-white rounded-xl font-semibold hover:bg-[#B38B12] transition-colors flex items-center gap-2"
         >
-          + Tambah Budaya
-        </button>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
+          </svg>
+          Tambah Budaya
+        </motion.button>
       </div>
 
       {/* Search */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <input
-          type="text"
-          placeholder="Cari budaya..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
-        />
+        <div className="relative">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Cari budaya..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -313,7 +445,7 @@ export default function CulturesListPage() {
               {loading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    Loading...
+                    <div className="inline-block w-8 h-8 border-4 border-primary-green border-t-transparent rounded-full animate-spin"></div>
                   </td>
                 </tr>
               ) : cultures.length === 0 ? (
@@ -323,16 +455,27 @@ export default function CulturesListPage() {
                   </td>
                 </tr>
               ) : (
-                cultures.map((culture) => (
-                  <tr key={culture.id} className="hover:bg-gray-50">
+                cultures.map((culture, index) => (
+                  <motion.tr
+                    key={culture.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4">
-                      <div>
-                        <p className="font-semibold text-[#1A1A1A]">{culture.name}</p>
-                        {culture.is_endangered && (
-                          <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">
-                            Terancam Punah
-                          </span>
+                      <div className="flex items-center gap-3">
+                        {culture.thumbnail && (
+                          <img src={culture.thumbnail} alt={culture.name} className="w-12 h-12 object-cover rounded-lg" />
                         )}
+                        <div>
+                          <p className="font-semibold text-[#1A1A1A]">{culture.name}</p>
+                          {culture.is_endangered && (
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">
+                              Terancam Punah
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
@@ -340,45 +483,51 @@ export default function CulturesListPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-lg capitalize">
-                        {culture.category || '-'}
+                        {culture.category_rel?.name || '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-3 py-1 text-sm rounded-lg capitalize ${
-                          culture.status === 'active'
+                        className={`px-3 py-1 text-sm rounded-lg font-medium ${
+                          culture.status === 'published'
                             ? 'bg-green-100 text-green-700'
                             : culture.status === 'draft'
-                            ? 'bg-gray-100 text-gray-700'
+                            ? 'bg-yellow-100 text-yellow-700'
                             : 'bg-red-100 text-red-700'
                         }`}
                       >
-                        {culture.status}
+                        {culture.status === 'published' ? 'Diterima' : culture.status === 'draft' ? 'Menunggu' : 'Ditolak'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => handleDetail(culture)}
                         className="inline-block px-4 py-1.5 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
                       >
                         Detail
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => handleEdit(culture)}
                         className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                       >
                         Edit
-                      </button>
+                      </motion.button>
                       {user?.role === 'admin' && (
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={() => handleDeleteClick(culture)}
                           className="px-4 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                         >
                           Hapus
-                        </button>
+                        </motion.button>
                       )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
             </tbody>
@@ -388,70 +537,160 @@ export default function CulturesListPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setPage(page - 1)}
               disabled={page === 1}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
-            </button>
+            </motion.button>
             <span className="text-sm text-gray-600">
               Page {page} of {totalPages}
             </span>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setPage(page + 1)}
               disabled={page === totalPages}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
-            </button>
+            </motion.button>
           </div>
         )}
       </div>
 
-      {/* Form Modal (Add/Edit) */}
-      <AnimatePresence>
-        {showFormModal && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowFormModal(false)}
-              className="fixed inset-0 bg-black/50 z-50"
-            />
-
-            {/* Modal */}
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-              >
-                {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-[#1A1A1A]">
-                    {isEditMode ? 'Edit Budaya' : 'Tambah Budaya Baru'}
-                  </h2>
-                  <button
-                    onClick={() => setShowFormModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+      {/* Form Modal */}
+      <FormModal
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          resetForm();
+        }}
+        title={isEditMode ? 'Edit Budaya' : 'Tambah Budaya Baru'}
+        size="4xl"
+      >
+        <form onSubmit={handleSubmit} className="space-y-6" id="culture-form">
+          {/* Thumbnail Upload */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">📷</span>
+              Thumbnail
+            </h3>
+            <div className="flex items-start gap-4">
+              {thumbnailPreview && (
+                <div className="relative">
+                  <img src={thumbnailPreview} alt="Thumbnail" className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200" />
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    type="button"
+                    onClick={() => {
+                      setThumbnailFile(null);
+                      setThumbnailPreview('');
+                      setFormData(prev => ({ ...prev, thumbnail: '' }));
+                    }}
+                    className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
                     </svg>
-                  </button>
+                  </motion.button>
                 </div>
+              )}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Thumbnail
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleThumbnailChange}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+                <p className="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+              </div>
+            </div>
+          </div>
 
-                {/* Modal Body */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  <form onSubmit={handleSubmit} className="space-y-6" id="culture-form">
+          {/* Gallery Images Upload */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">🖼️</span>
+              Galeri Gambar
+            </h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Gambar (Multiple)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImagesChange}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+              />
+            </div>
+            
+            {/* Existing Images */}
+            {existingImages.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Gambar Tersimpan ({existingImages.length})</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {existingImages.map((img) => (
+                    <div key={img.id} className="relative group">
+                      <img src={img.image_url} alt={img.alt_text} className="w-full h-24 object-cover rounded-lg border-2 border-gray-200" />
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        type="button"
+                        onClick={() => removeExistingImage(img.id!)}
+                        className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                        </svg>
+                      </motion.button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* New Images Preview */}
+            {imagePreviews.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Gambar Baru ({imagePreviews.length})</p>
+                <div className="grid grid-cols-4 gap-3">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img src={preview} alt={`New ${index}`} className="w-full h-24 object-cover rounded-lg border-2 border-green-200" />
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                        </svg>
+                      </motion.button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Informasi Dasar */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Informasi Dasar</h3>
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">📝</span>
+              Informasi Dasar
+            </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
@@ -464,7 +703,7 @@ export default function CulturesListPage() {
                   value={formData.name}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Contoh: Tari Reog Ponorogo"
                 />
               </div>
@@ -479,7 +718,7 @@ export default function CulturesListPage() {
                   value={formData.slug}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="tari-reog-ponorogo"
                 />
               </div>
@@ -493,9 +732,29 @@ export default function CulturesListPage() {
                   name="subtitle"
                   value={formData.subtitle}
                   onChange={handleFormChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Tarian Mistis dari Gerbang Timur Jawa"
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Kategori *
+                </label>
+                <select
+                  name="category_id"
+                  value={formData.category_id}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
+                >
+                  <option value="">Pilih Kategori</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="md:col-span-2">
@@ -508,7 +767,7 @@ export default function CulturesListPage() {
                   onChange={handleFormChange}
                   required
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Deskripsi singkat tentang budaya ini..."
                 />
               </div>
@@ -522,7 +781,7 @@ export default function CulturesListPage() {
                   value={formData.long_description}
                   onChange={handleFormChange}
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Deskripsi lengkap dan detail..."
                 />
               </div>
@@ -536,7 +795,7 @@ export default function CulturesListPage() {
                   value={formData.meaning}
                   onChange={handleFormChange}
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Makna dan filosofi dari budaya ini..."
                 />
               </div>
@@ -544,8 +803,11 @@ export default function CulturesListPage() {
           </div>
 
           {/* Lokasi */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Lokasi</h3>
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600">📍</span>
+              Lokasi
+            </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -558,7 +820,7 @@ export default function CulturesListPage() {
                   value={formData.province}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Jawa Timur"
                 />
               </div>
@@ -573,7 +835,7 @@ export default function CulturesListPage() {
                   value={formData.city}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Ponorogo"
                 />
               </div>
@@ -588,7 +850,7 @@ export default function CulturesListPage() {
                   value={formData.location}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="Ponorogo, Jawa Timur"
                 />
               </div>
@@ -603,7 +865,7 @@ export default function CulturesListPage() {
                   name="latitude"
                   value={formData.latitude}
                   onChange={handleFormChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="-7.8753"
                 />
               </div>
@@ -618,7 +880,7 @@ export default function CulturesListPage() {
                   name="longitude"
                   value={formData.longitude}
                   onChange={handleFormChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
                   placeholder="111.4644"
                 />
               </div>
@@ -626,63 +888,28 @@ export default function CulturesListPage() {
           </div>
 
           {/* Detail Lainnya */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Detail Lainnya</h3>
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600">⚙️</span>
+              Detail Lainnya
+            </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Kategori
+            <div className="grid grid-cols-1">
+              <div className="flex items-center pt-8">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      name="is_endangered"
+                      checked={formData.is_endangered}
+                      onChange={handleFormChange}
+                      className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-red-600 transition-colors">
+                    🚨 Budaya Terancam Punah
+                  </span>
                 </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
-                >
-                  <option value="">Pilih Kategori</option>
-                  <option value="tarian">Tarian</option>
-                  <option value="musik">Musik</option>
-                  <option value="pakaian">Pakaian Adat</option>
-                  <option value="arsitektur">Arsitektur</option>
-                  <option value="kuliner">Kuliner</option>
-                  <option value="upacara">Upacara Adat</option>
-                  <option value="kerajinan">Kerajinan</option>
-                  <option value="senjata">Senjata</option>
-                  <option value="permainan">Permainan</option>
-                  <option value="bahasa">Bahasa & Aksara</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status *
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleFormChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL Thumbnail
-                </label>
-                <input
-                  type="text"
-                  name="thumbnail"
-                  value={formData.thumbnail}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
-                  placeholder="https://example.com/image.jpg"
-                />
               </div>
 
               <div className="md:col-span-2">
@@ -694,213 +921,292 @@ export default function CulturesListPage() {
                   value={formData.map_embed_url}
                   onChange={handleFormChange}
                   rows={2}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green"
-                  placeholder="<iframe src='https://www.google.com/maps/embed?...'></iframe>"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all font-mono text-xs"
+                  placeholder="https://www.google.com/maps/embed?pb=!1m18..."
                 />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="is_endangered"
-                    checked={formData.is_endangered}
-                    onChange={handleFormChange}
-                    className="w-5 h-5 text-primary-green border-gray-300 rounded focus:ring-primary-green"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Budaya Terancam Punah
-                  </span>
-                </label>
               </div>
             </div>
           </div>
-                  </form>
-                </div>
 
-                {/* Modal Footer */}
-                <div className="flex items-center gap-3 p-6 border-t border-gray-200 bg-gray-50">
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowFormModal(false)}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-white transition-colors"
-                  >
-                    Batal
-                  </motion.button>
-                  <motion.button
-                    type="submit"
-                    form="culture-form"
-                    disabled={formLoading}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 px-4 py-2.5 bg-[#D4A017] text-white rounded-lg font-semibold hover:bg-[#B38B12] transition-colors disabled:opacity-50"
-                  >
-                    {formLoading ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Tambah Budaya')}
-                  </motion.button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+          {/* Submit Buttons */}
+          <div className="flex items-center gap-3 pt-6 border-t">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setShowFormModal(false);
+                resetForm();
+              }}
+              className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+            >
+              Batal
+            </motion.button>
+            <motion.button
+              type="submit"
+              disabled={formLoading}
+              whileHover={{ scale: formLoading ? 1 : 1.02 }}
+              whileTap={{ scale: formLoading ? 1 : 0.98 }}
+              className="flex-1 px-4 py-3 bg-[#D4A017] text-white rounded-xl font-semibold hover:bg-[#B38B12] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {formLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Menyimpan...
+                </>
+              ) : (
+                <>{isEditMode ? '💾 Simpan Perubahan' : '✨ Tambah Budaya'}</>
+              )}
+            </motion.button>
+          </div>
+        </form>
+      </FormModal>
 
       {/* Detail Modal */}
-      <AnimatePresence>
-        {showDetailModal && selectedCulture && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowDetailModal(false)}
-              className="fixed inset-0 bg-black/50 z-50"
-            />
-
-            {/* Modal */}
-            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
-              >
-                {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-[#1A1A1A]">Detail Budaya</h2>
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
-                    </svg>
-                  </button>
+      <FormModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedCulture(null);
+        }}
+        title="Detail Budaya"
+        size="3xl"
+      >
+        {selectedCulture && (
+          <div className="space-y-6">
+            {selectedCulture.thumbnail && (
+              <div className="relative rounded-xl overflow-hidden">
+                <img 
+                  src={selectedCulture.thumbnail} 
+                  alt={selectedCulture.name}
+                  className="w-full h-64 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <div className="absolute bottom-4 left-4 right-4 text-white">
+                  <h3 className="text-2xl font-bold">{selectedCulture.name}</h3>
+                  {selectedCulture.subtitle && (
+                    <p className="text-sm mt-1 opacity-90">{selectedCulture.subtitle}</p>
+                  )}
                 </div>
+              </div>
+            )}
+            
+            {/* Gallery */}
+            {selectedCulture.images && selectedCulture.images.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="text-purple-600">🖼️</span> Galeri ({selectedCulture.images.length})
+                </h4>
+                <div className="grid grid-cols-4 gap-3">
+                  {selectedCulture.images.map((img, idx) => (
+                    <img key={idx} src={img.image_url} alt={img.alt_text} className="w-full h-24 object-cover rounded-lg hover:scale-105 transition-transform cursor-pointer" />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-6">
+              <div className="col-span-2 bg-blue-50 p-4 rounded-xl">
+                <p className="text-sm text-blue-600 font-medium mb-1">Deskripsi</p>
+                <p className="text-gray-900">{selectedCulture.description}</p>
+              </div>
 
-                {/* Modal Body */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="space-y-6">
-                    {selectedCulture.thumbnail && (
-                      <img 
-                        src={selectedCulture.thumbnail} 
-                        alt={selectedCulture.name}
-                        className="w-full h-64 object-cover rounded-xl"
-                      />
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Nama</p>
-                        <p className="font-semibold text-gray-900">{selectedCulture.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Slug</p>
-                        <p className="font-semibold text-gray-900">{selectedCulture.slug}</p>
-                      </div>
-                      {selectedCulture.subtitle && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-500">Subtitle</p>
-                          <p className="font-semibold text-gray-900">{selectedCulture.subtitle}</p>
-                        </div>
-                      )}
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-500">Deskripsi</p>
-                        <p className="text-gray-900">{selectedCulture.description}</p>
-                      </div>
-                      {selectedCulture.long_description && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-500">Deskripsi Lengkap</p>
-                          <p className="text-gray-900">{selectedCulture.long_description}</p>
-                        </div>
-                      )}
-                      {selectedCulture.meaning && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-500">Makna & Filosofi</p>
-                          <p className="text-gray-900">{selectedCulture.meaning}</p>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm text-gray-500">Provinsi</p>
-                        <p className="font-semibold text-gray-900">{selectedCulture.province}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Kota</p>
-                        <p className="font-semibold text-gray-900">{selectedCulture.city}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-500">Lokasi</p>
-                        <p className="font-semibold text-gray-900">{selectedCulture.location}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Kategori</p>
-                        <p className="font-semibold text-gray-900 capitalize">{selectedCulture.category || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Status</p>
-                        <span className={`inline-block px-3 py-1 text-sm rounded-lg capitalize ${
-                          selectedCulture.status === 'active' ? 'bg-green-100 text-green-700' :
-                          selectedCulture.status === 'draft' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {selectedCulture.status}
-                        </span>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-500">Terancam Punah</p>
-                        <p className="font-semibold text-gray-900">{selectedCulture.is_endangered ? 'Ya' : 'Tidak'}</p>
-                      </div>
-                    </div>
+              {selectedCulture.long_description && (
+                <div className="col-span-2 bg-green-50 p-4 rounded-xl">
+                  <p className="text-sm text-green-600 font-medium mb-1">Deskripsi Lengkap</p>
+                  <p className="text-gray-900">{selectedCulture.long_description}</p>
+                </div>
+              )}
+
+              {selectedCulture.meaning && (
+                <div className="col-span-2 bg-purple-50 p-4 rounded-xl">
+                  <p className="text-sm text-purple-600 font-medium mb-1">Makna & Filosofi</p>
+                  <p className="text-gray-900">{selectedCulture.meaning}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Kategori</p>
+                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-semibold">
+                  {selectedCulture.category_rel?.name || '-'}
+                </span>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Status</p>
+                <span className={`inline-block px-3 py-1 rounded-lg font-semibold ${
+                  selectedCulture.status === 'published' ? 'bg-green-100 text-green-700' :
+                  selectedCulture.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {selectedCulture.status === 'published' ? 'Diterima' : selectedCulture.status === 'draft' ? 'Menunggu' : 'Ditolak'}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Provinsi</p>
+                <p className="font-semibold text-gray-900">📍 {selectedCulture.province}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Kota</p>
+                <p className="font-semibold text-gray-900">🏙️ {selectedCulture.city}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Terancam Punah</p>
+                <span className={`inline-block px-3 py-1 rounded-lg font-semibold ${
+                  selectedCulture.is_endangered ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                }`}>
+                  {selectedCulture.is_endangered ? '🚨 Ya' : '✅ Tidak'}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Dibuat</p>
+                <p className="text-gray-900">{new Date(selectedCulture.created_at).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}</p>
+              </div>
+            </div>
+
+            {/* Rejection Reason */}
+            {selectedCulture.status === 'archive' && selectedCulture.rejection_reason && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="#DC2626"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-900 mb-1">Alasan Penolakan</p>
+                    <p className="text-red-800 text-sm">{selectedCulture.rejection_reason}</p>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Modal Footer */}
-                <div className="flex items-center gap-3 p-6 border-t border-gray-200 bg-gray-50">
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      setShowDetailModal(false);
-                      setSelectedCulture(null);
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-[#D4A017] text-white rounded-lg font-semibold hover:bg-[#B38B12] transition-colors"
-                  >
-                    Tutup
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      setShowDetailModal(false);
-                      handleEdit(selectedCulture);
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                  >
-                    Edit
-                  </motion.button>
-                </div>
-              </motion.div>
+            <div className="flex items-center gap-3 pt-6 border-t">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setSelectedCulture(null);
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Tutup
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  handleEdit(selectedCulture);
+                }}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                ✏️ Edit Budaya
+              </motion.button>
             </div>
-          </>
+          </div>
         )}
-      </AnimatePresence>
+      </FormModal>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
+      {/* Delete Confirmation Modal */}
+      <FormModal
         isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={handleDelete}
-        title="Hapus Budaya"
-        message={`Apakah Anda yakin ingin menghapus "${selectedCulture?.name}"? Tindakan ini tidak dapat dibatalkan.`}
-        confirmText="Hapus"
-        cancelText="Batal"
-        type="danger"
-        loading={formLoading}
-      />
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setSelectedCulture(null);
+        }}
+        title="⚠️ Hapus Budaya"
+        size="md"
+      >
+        <div className="space-y-6">
+          {/* Warning Icon */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-red-600">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Hapus "{selectedCulture?.name}"?
+            </h3>
+            <p className="text-gray-600">
+              Apakah Anda yakin ingin menghapus budaya ini? Semua data termasuk gambar galeri akan terhapus. Tindakan ini tidak dapat dibatalkan.
+            </p>
+          </div>
+
+          {/* Preview Card */}
+          {selectedCulture && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                {selectedCulture.thumbnail && (
+                  <img 
+                    src={selectedCulture.thumbnail} 
+                    alt={selectedCulture.name} 
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
+                )}
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{selectedCulture.name}</p>
+                  <p className="text-sm text-gray-600">{selectedCulture.city}, {selectedCulture.province}</p>
+                  {selectedCulture.images && selectedCulture.images.length > 0 && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {selectedCulture.images.length} foto galeri akan ikut terhapus
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex items-center gap-3">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setSelectedCulture(null);
+              }}
+              disabled={formLoading}
+              className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Batal
+            </motion.button>
+            <motion.button
+              type="button"
+              whileHover={{ scale: formLoading ? 1 : 1.02 }}
+              whileTap={{ scale: formLoading ? 1 : 0.98 }}
+              onClick={handleDelete}
+              disabled={formLoading}
+              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {formLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Menghapus...
+                </>
+              ) : (
+                <>
+                  🗑️ Ya, Hapus
+                </>
+              )}
+            </motion.button>
+          </div>
+        </div>
+      </FormModal>
     </div>
   );
 }

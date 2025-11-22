@@ -87,7 +87,7 @@ export async function GET(
     // Get related articles (same category, exclude current)
     const relatedArticles = await prisma.article.findMany({
       where: {
-        category: article.category,
+        category_id: article.category_id,
         id: { not: article.id },
       },
       include: {

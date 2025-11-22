@@ -11,13 +11,20 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const search = searchParams.get('search');
     const highlight = searchParams.get('highlight');
+    const authorId = searchParams.get('author_id');
 
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {
-      status: 'published', // Only show published articles by default
-    };
+    const where: any = {};
+    
+    // If author_id is provided, show all statuses for that author (draft, published, archive)
+    // Otherwise, only show published articles
+    if (authorId) {
+      where.author_id = parseInt(authorId);
+    } else {
+      where.status = 'published';
+    }
 
     // Lookup category by slug if provided
     if (category && category !== 'semua') {

@@ -61,31 +61,26 @@ export async function POST(
       );
     }
     
-    // Update contributor status
-    const updatedContributor = await prisma.contributor.update({
-      where: { id: contributorId },
-      data: {
-        verification_status: 'rejected',
-        rejection_reason: reason,
-        verified_by: decoded.userId,
-        verified_at: new Date()
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            full_name: true,
-            email: true,
-            role: true
-          }
-        }
-      }
+    // Delete contributor and update user role to 'user' in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Delete contributor record
+      await tx.contributor.delete({
+        where: { id: contributorId }
+      });
+      
+      // Update user role back to 'user'
+      const updatedUser = await tx.user.update({
+        where: { id: contributor.user_id },
+        data: { role: 'user' }
+      });
+      
+      return updatedUser;
     });
     
     return NextResponse.json({
       success: true,
-      data: updatedContributor,
-      message: 'Verification rejected'
+      data: result,
+      message: 'Verification rejected, contributor data deleted and user role reverted to user'
     });
   } catch (error: any) {
     console.error('Error rejecting verification:', error);

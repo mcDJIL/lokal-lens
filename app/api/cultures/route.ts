@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       thumbnail: culture.images[0]?.image_url || culture.thumbnail,
       is_endangered: culture.is_endangered,
       subtitle: culture.subtitle,
-      category: culture.category_rel?.name || culture.category,
+      category: culture.category_rel?.name || null,
       categorySlug: culture.category_rel?.slug,
       categoryIcon: culture.category_rel?.icon,
     }));

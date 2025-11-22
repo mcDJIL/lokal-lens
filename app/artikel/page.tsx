@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HeroSection from "@/components/sections/Artikel/HeroSection";
 import SearchSection from "@/components/sections/Artikel/SearchSection";
@@ -53,25 +53,31 @@ export default function ArtikelPage() {
   }, [searchParams, router]);
 
   return (
-    <main className="w-full bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <HeroSection />
-        <SearchSection 
-          currentCategory={currentCategory}
-          currentSearch={currentSearch}
-          onCategoryChange={(category) => updateUrlParams({ category })}
-          onSearchChange={(search) => updateUrlParams({ search })}
-        />
-        <ArticleGridSection 
-          page={currentPage}
-          category={currentCategory}
-          search={currentSearch}
-        />
-        <PaginationSection 
-          currentPage={currentPage}
-          onPageChange={(page) => updateUrlParams({ page })}
-        />
+    <Suspense fallback={
+      <div className="w-full bg-white min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C1A36F]"></div>
       </div>
-    </main>
+    }>
+      <main className="w-full bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <HeroSection />
+          <SearchSection 
+            currentCategory={currentCategory}
+            currentSearch={currentSearch}
+            onCategoryChange={(category) => updateUrlParams({ category })}
+            onSearchChange={(search) => updateUrlParams({ search })}
+          />
+          <ArticleGridSection 
+            page={currentPage}
+            category={currentCategory}
+            search={currentSearch}
+          />
+          <PaginationSection 
+            currentPage={currentPage}
+            onPageChange={(page) => updateUrlParams({ page })}
+          />
+        </div>
+      </main>
+    </Suspense>
   );
 }

@@ -177,6 +177,7 @@ model Article {
   read_time      Int      @default(5) @map("read_time") // in minutes
   views          Int      @default(0)
   status         ArticleStatus @default(published)
+  rejection_reason String?  @db.Text @map("rejection_reason")
   is_highlight   Boolean  @default(false) @map("is_highlight")
   published_at   DateTime @default(now()) @map("published_at")
   created_at     DateTime @default(now()) @map("created_at")
@@ -261,6 +262,7 @@ model Culture {
   latitude         Float? // For map and nearby cultures
   longitude        Float? // For map and nearby cultures
   status           CultureStatus    @default(published)
+  rejection_reason String?          @db.Text @map("rejection_reason")
   is_endangered    Boolean          @default(false) // Terancam Punah
   thumbnail        String? // Main image URL
   map_embed_url    String?          @db.Text // Google Maps embed URL
@@ -336,6 +338,7 @@ model Quiz {
   time_limit      Int? // in minutes, null = no limit
   total_questions Int            @default(0)
   status          QuizStatus     @default(draft)
+  rejection_reason String?       @db.Text @map("rejection_reason")
   created_at      DateTime       @default(now()) @map("created_at")
   updated_at      DateTime       @updatedAt @map("updated_at")
 

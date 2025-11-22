@@ -33,7 +33,8 @@ const CTASection = () => {
             Jelajahi, berkontribusi, dan sebarkan kekayaan budaya Indonesia kepada
             dunia.
           </motion.p>
-          <motion.button 
+          <motion.a 
+            href="/bergabung"
             className="inline-flex items-center justify-center px-[18px] py-[13px] rounded-full bg-[#FDB813] hover:bg-[#e5a711] transition-colors"
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -49,7 +50,7 @@ const CTASection = () => {
             <span className="text-base font-bold leading-6 tracking-[0.24px] text-[#181611]">
               Bergabung Sebagai Kontributor
             </span>
-          </motion.button>
+          </motion.a>
         </motion.div>
       </div>
     </section>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import ArticleContent from '@/components/sections/Artikel/ArticleContent';
 import ArticleDiscussion from '@/components/sections/Artikel/ArticleDiscussion';
 import RelatedArticles from '@/components/sections/Artikel/RelatedArticles';
@@ -46,7 +46,15 @@ interface RelatedArticle {
   };
 }
 
-export default function ArticleDetailPage() {
+export default function ArticleDetailPageWrapper() {
+  return (
+    <Suspense fallback={<div className="w-full bg-white min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C1A36F]"></div></div>}>
+      <ArticleDetailPage />
+    </Suspense>
+  );
+}
+
+function ArticleDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 

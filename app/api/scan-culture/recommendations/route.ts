@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         OR: [
           { title: { contains: objectType } },
           { excerpt: { contains: objectType } },
-          { category: { contains: category } },
+          { category_rel: { name: { contains: category } } },
           { province: { contains: location.split(',')[1]?.trim() || '' } },
           ...keywords.map(keyword => ({ title: { contains: keyword } })),
           ...keywords.map(keyword => ({ excerpt: { contains: keyword } }))
@@ -31,7 +31,11 @@ export async function GET(request: Request) {
         slug: true,
         excerpt: true,
         featured_image: true,
-        category: true,
+        category_rel: {
+          select: {
+            name: true
+          }
+        },
         published_at: true
       },
       orderBy: {
@@ -46,12 +50,12 @@ export async function GET(request: Request) {
         OR: [
           { name: { contains: objectType } },
           { description: { contains: objectType } },
-          { category: category as any },
+          { category_rel: { name: { contains: category } } },
           { province: { contains: location.split(',')[1]?.trim() || '' } },
           ...keywords.map(keyword => ({ name: { contains: keyword } })),
           ...keywords.map(keyword => ({ description: { contains: keyword } }))
         ],
-        status: 'active'
+        status: 'published'
       },
       select: {
         id: true,
@@ -59,7 +63,11 @@ export async function GET(request: Request) {
         slug: true,
         description: true,
         thumbnail: true,
-        category: true,
+        category_rel: {
+          select: {
+            name: true
+          }
+        },
         province: true
       },
       orderBy: {
@@ -74,7 +82,7 @@ export async function GET(request: Request) {
         OR: [
           { title: { contains: objectType } },
           { description: { contains: objectType } },
-          { category: { contains: category } },
+          { category_rel: { name: { contains: category } } },
           { location_province: { contains: location.split(',')[1]?.trim() || '' } },
           ...keywords.map(keyword => ({ title: { contains: keyword } })),
           ...keywords.map(keyword => ({ description: { contains: keyword } }))
@@ -90,7 +98,11 @@ export async function GET(request: Request) {
         thumbnail: true,
         date_start: true,
         location_province: true,
-        category: true
+        category_rel: {
+          select: {
+            name: true
+          }
+        }
       },
       orderBy: {
         date_start: 'asc'
@@ -104,7 +116,7 @@ export async function GET(request: Request) {
         OR: [
           { title: { contains: objectType } },
           { description: { contains: objectType } },
-          { category: { contains: category } },
+          { category_rel: { name: { contains: category } } },
           ...keywords.map(keyword => ({ title: { contains: keyword } })),
           ...keywords.map(keyword => ({ description: { contains: keyword } }))
         ],
@@ -116,7 +128,11 @@ export async function GET(request: Request) {
         slug: true,
         description: true,
         thumbnail: true,
-        category: true,
+        category_rel: {
+          select: {
+            name: true
+          }
+        },
         difficulty: true
       },
       orderBy: {

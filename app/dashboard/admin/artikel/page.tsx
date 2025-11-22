@@ -37,6 +37,7 @@ interface Article {
   created_at: string;
   reading_time?: number;
   tags?: string;
+  is_highlight?: boolean;
 }
 
 interface FormData {
@@ -107,13 +108,10 @@ export default function ArticlesPage() {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch(
         `/api/articles?page=${page}&limit=10&search=${search}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: 'include',
         }
       );
       const data = await response.json();
@@ -232,8 +230,6 @@ export default function ArticlesPage() {
     setFormLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      
       // Upload image if new file selected
       let imageUrl = formData.featured_image;
       if (imageFile) {
@@ -263,8 +259,8 @@ export default function ArticlesPage() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(submitData),
       });
 
@@ -291,12 +287,9 @@ export default function ArticlesPage() {
     
     setFormLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/articles/${selectedArticle.id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       
       const data = await response.json();
@@ -311,6 +304,71 @@ export default function ArticlesPage() {
     } catch (error) {
       console.error('Error deleting article:', error);
       alert('Terjadi kesalahan saat menghapus artikel');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleToggleHighlight = async () => {
+    if (!selectedArticle) return;
+    
+    setFormLoading(true);
+    try {
+      const response = await fetch(`/api/admin/articles/${selectedArticle.id}/highlight`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          is_highlight: !selectedArticle.is_highlight
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert(selectedArticle.is_highlight ? 'Highlight dihapus' : 'Artikel dijadikan highlight');
+        setShowDetailModal(false);
+        setSelectedArticle(null);
+        fetchArticles();
+      } else {
+        alert(data.error || 'Gagal mengubah highlight');
+      }
+    } catch (error) {
+      console.error('Error toggling highlight:', error);
+      alert('Terjadi kesalahan saat mengubah highlight');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (article: Article, newStatus: string) => {
+    setFormLoading(true);
+    try {
+      const response = await fetch(`/api/admin/articles/${article.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: newStatus
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        const statusText = newStatus === 'published' ? 'dipublish' : newStatus === 'archive' ? 'diarsipkan' : 'diubah ke draft';
+        alert(`Artikel berhasil ${statusText}`);
+        setShowDetailModal(false);
+        setSelectedArticle(null);
+        fetchArticles();
+      } else {
+        alert(data.error || 'Gagal mengubah status artikel');
+      }
+    } catch (error) {
+      console.error('Error changing status:', error);
+      alert('Terjadi kesalahan saat mengubah status');
     } finally {
       setFormLoading(false);
     }
@@ -710,7 +768,7 @@ export default function ArticlesPage() {
           setSelectedArticle(null);
         }}
         title="Detail Artikel"
-        size="3xl"
+        size="4xl"
       >
         {selectedArticle && (
           <div className="space-y-6">
@@ -762,6 +820,15 @@ export default function ArticlesPage() {
               </div>
 
               <div>
+                <p className="text-sm text-gray-500 mb-1">Highlight</p>
+                <span className={`inline-block px-3 py-1 text-sm rounded-lg font-semibold ${
+                  selectedArticle.is_highlight ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {selectedArticle.is_highlight ? '⭐ Ya' : '- Tidak'}
+                </span>
+              </div>
+
+              <div>
                 <p className="text-sm text-gray-500 mb-1">Penulis</p>
                 <p className="font-semibold text-gray-900">✍️ {selectedArticle.author?.full_name || selectedArticle.author?.name || '-'}</p>
               </div>
@@ -802,26 +869,76 @@ export default function ArticlesPage() {
 
             <div className="flex items-center gap-3 pt-6 border-t">
               <motion.button
+                type="button"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setSelectedArticle(null);
-                }}
-                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
-              >
-                Tutup
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowDetailModal(false);
-                  handleEdit(selectedArticle);
-                }}
+                onClick={() => handleEdit(selectedArticle)}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
-                ✏️ Edit Artikel
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/>
+                </svg>
+                Edit
+              </motion.button>
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleToggleHighlight()}
+                disabled={formLoading}
+                className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
+                  selectedArticle.is_highlight
+                    ? 'bg-gray-600 text-white hover:bg-gray-700'
+                    : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                }`}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="currentColor"/>
+                </svg>
+                {selectedArticle.is_highlight ? 'Hapus Highlight' : 'Jadikan Highlight'}
+              </motion.button>
+              {selectedArticle.status !== 'archive' && (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleStatusChange(selectedArticle, 'archive')}
+                  disabled={formLoading}
+                  className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z" fill="currentColor"/>
+                  </svg>
+                  Arsipkan
+                </motion.button>
+              )}
+              {selectedArticle.status === 'archive' && (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleStatusChange(selectedArticle, 'published')}
+                  disabled={formLoading}
+                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                  </svg>
+                  Publish
+                </motion.button>
+              )}
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleDeleteClick(selectedArticle)}
+                disabled={formLoading}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
+                </svg>
+                Hapus
               </motion.button>
             </div>
           </div>

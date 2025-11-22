@@ -1,12 +1,10 @@
 import 'dotenv/config'
-import { defineConfig, env } from '@/lib/prisma';
 
-export default defineConfig({
+// Prisma config file - not needed for Next.js runtime
+// This is a placeholder for prisma CLI configuration
+export default {
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations'
   },
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-});
+};

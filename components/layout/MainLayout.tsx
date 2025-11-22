@@ -11,7 +11,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
-  const isAuthPage = pathname === '/masuk' || pathname === '/daftar' || pathname === '/lupa-kata-sandi';
+  const isAuthPage = pathname === '/masuk' || pathname === '/daftar' || pathname === '/lupa-kata-sandi' || pathname === '/bergabung';
   const isDashboardPage = pathname.startsWith('/dashboard');
 
   if (isAuthPage || isDashboardPage) {

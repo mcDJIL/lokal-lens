@@ -12,6 +12,11 @@ export async function GET(
     const event = await prisma.event.findUnique({
       where: { slug },
       include: {
+        category_rel: {
+          select: {
+            name: true,
+          },
+        },
         performers: {
           orderBy: {
             order_number: 'asc',
@@ -108,7 +113,7 @@ export async function GET(
       price: event.price,
       priceDisplay: event.price ? `Rp ${event.price.toLocaleString('id-ID')}` : 'Gratis',
       status: event.status,
-      category: event.category,
+      category: event.category_rel?.name || null,
       organizer: event.organizer,
       contactEmail: event.contact_email,
       contactPhone: event.contact_phone,

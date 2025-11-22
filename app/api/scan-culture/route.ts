@@ -234,7 +234,7 @@ PENTING:
               location: scanResult.location || "Indonesia",
               province: province || "Indonesia",
               city: scanResult.location?.split(',')[0]?.trim() || "",
-              status: 'active',
+              status: 'published',
               is_endangered: scanResult.rarity === "Sangat Langka",
               thumbnail: scanResult.image || null,
             }

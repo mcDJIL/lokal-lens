@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
             badges_earned: true,
           },
         },
+        contributor: {
+          select: {
+            verification_status: true,
+          },
+        },
       },
     });
 
@@ -45,6 +50,18 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid email or password' },
         { status: 401 }
       );
+    }
+
+    // Check if user is a contributor and not yet verified
+    if (user.role === 'contributor' && user.contributor) {
+      if (user.contributor.verification_status === 'pending') {
+        return NextResponse.json(
+          { 
+            error: 'Akun Anda sebagai kontributor masih dalam proses verifikasi. Harap tunggu konfirmasi dari admin.' 
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Generate token
