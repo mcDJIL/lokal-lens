@@ -1,3 +1,7 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
 interface CulturalItemCardProps {
   onClose: () => void;
   culture?: {
@@ -54,7 +58,14 @@ const CulturalItemCard = ({ onClose, culture }: CulturalItemCardProps) => {
   const displayDescription = culture.description || culture.subtitle || 'Tidak ada deskripsi tersedia';
 
   return (
-    <div className="w-full sm:w-60 lg:w-[239px] rounded-[20px] bg-white shadow-lg overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      whileHover={{ y: -5, scale: 1.03 }}
+      transition={{ duration: 0.3 }}
+      className="w-full sm:w-60 lg:w-[239px] rounded-[20px] bg-white shadow-lg overflow-hidden"
+    >
       <div className="relative h-32 overflow-hidden rounded-t-[32px]">
         <img
           src={displayImage}
@@ -96,16 +107,18 @@ const CulturalItemCard = ({ onClose, culture }: CulturalItemCardProps) => {
           {displayDescription}
         </p>
 
-        <a
+        <motion.a
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           href={`/jelajahi/${culture.slug}`}
           className="block w-full h-11 px-4 rounded-full bg-[#00A99D] hover:bg-[#008f85] transition-colors"
         >
           <span className="flex items-center justify-center h-full text-sm font-bold leading-[21px] tracking-[0.21px] text-white">
             Lihat Info Selengkapnya
           </span>
-        </a>
+        </motion.a>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 interface AnswerOptionsProps {
   options: string[];
   selectedAnswer: number | null;
-  correctAnswer: number;
+  correctAnswer: number | null;
   showFeedback: boolean;
   onSelect: (index: number) => void;
 }
@@ -18,7 +18,7 @@ export default function AnswerOptions({
   onSelect 
 }: AnswerOptionsProps) {
   const getButtonStyle = (index: number) => {
-    if (!showFeedback) {
+    if (!showFeedback || correctAnswer === null) {
       return selectedAnswer === index 
         ? 'bg-[#2B6CEE] text-white border-2 border-[#2B6CEE]' 
         : 'bg-[#F6F6F8] text-[#111318] hover:bg-gray-200';

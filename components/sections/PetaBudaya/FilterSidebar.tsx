@@ -1,5 +1,7 @@
 'use client';
 
+import { motion } from 'framer-motion';
+
 interface FilterSidebarProps {
   selectedCategory: string;
   setSelectedCategory: (value: string) => void;
@@ -22,19 +24,34 @@ const FilterSidebar = ({
   onResetFilter,
 }: FilterSidebarProps) => {
   return (
-    <aside className="w-full lg:w-[352px] flex-shrink-0">
+    <motion.aside 
+      initial={{ opacity: 0, x: -50 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="w-full lg:w-[352px] flex-shrink-0"
+    >
       <div className="rounded-[32px] bg-[#E8C547] shadow-sm p-6">
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-0">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="flex flex-col gap-0"
+          >
             <h2 className="text-lg font-bold leading-[27px] text-[#333333] mb-0">
               Filter Peta
             </h2>
             <p className="text-sm font-normal leading-[21px] text-[#000000]">
               Saring berdasarkan preferensi Anda
             </p>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-col gap-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col gap-4"
+          >
             <div className="flex flex-col gap-0">
               <label className="text-sm font-medium leading-[21px] text-[#333333] pb-2">
                 Kategori
@@ -106,29 +123,38 @@ const FilterSidebar = ({
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-col gap-2 pt-4 border-t border-[#F0F2F5]">
-            <button
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="flex flex-col gap-2 pt-4 border-t border-[#F0F2F5]"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onApplyFilter}
               className="w-full h-11 px-4 rounded-full bg-[#004E89] hover:bg-[#003d6d] transition-colors"
             >
               <span className="text-sm font-bold leading-[21px] tracking-[0.21px] text-[#E8C547]">
                 Terapkan Filter
               </span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onResetFilter}
               className="w-full h-11 px-4 rounded-full bg-[#F0F2F5] hover:bg-[#E5E7EB] transition-colors"
             >
               <span className="text-sm font-bold leading-[21px] tracking-[0.21px] text-[#333333]">
                 Reset
               </span>
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 };
 

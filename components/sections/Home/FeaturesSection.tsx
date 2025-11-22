@@ -1,3 +1,7 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
 const FeaturesSection = () => {
   const features = [
     {
@@ -38,27 +42,79 @@ const FeaturesSection = () => {
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut"
+      }
+    }
+  };
+
   return (
     <section className="w-full mt-12 sm:mt-16 lg:mt-[69px] px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col items-center max-w-6xl mx-auto">
-        <h2 className="text-xl sm:text-[22px] font-bold leading-tight tracking-[-0.33px] text-[#111813] text-center">
+        <motion.h2 
+          className="text-xl sm:text-[22px] font-bold leading-tight tracking-[-0.33px] text-[#111813] text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
           Jelajahi Fitur Unggulan Kami
-        </h2>
-        <p className="text-sm sm:text-base font-normal leading-6 text-[#4B5563] text-center max-w-full sm:max-w-xl lg:w-[717px] mt-3 sm:mt-[17px] px-4">
+        </motion.h2>
+        <motion.p 
+          className="text-sm sm:text-base font-normal leading-6 text-[#4B5563] text-center max-w-full sm:max-w-xl lg:w-[717px] mt-3 sm:mt-[17px] px-4"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           Lokallens menyediakan berbagai fitur untuk membantu Anda terhubung dengan warisan budaya
           Indonesia secara interaktif dan menyenangkan.
-        </p>
+        </motion.p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 sm:mt-8 lg:mt-[38px] w-full">
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 sm:mt-8 lg:mt-[38px] w-full"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {features.map((feature, index) => (
-            <div
+            <motion.div
               key={index}
-              className="rounded-2xl lg:rounded-[32px] border border-[#E5E7EB] bg-white p-5 sm:p-6 hover:shadow-lg transition-shadow"
+              className="rounded-2xl lg:rounded-[32px] border border-[#E5E7EB] bg-white p-5 sm:p-6 hover:shadow-xl transition-shadow"
+              variants={cardVariants}
+              whileHover={{ 
+                y: -10, 
+                scale: 1.03,
+                transition: { duration: 0.3 }
+              }}
             >
               <div className="flex flex-col">
-                <div className="w-9 h-11">
+                <motion.div 
+                  className="w-9 h-11"
+                  initial={{ scale: 0, rotate: -180 }}
+                  whileInView={{ scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                >
                   {feature.icon}
-                </div>
+                </motion.div>
                 <h3 className="text-base font-bold leading-5 text-[#111813] mt-2.5">
                   {feature.title}
                 </h3>
@@ -66,9 +122,9 @@ const FeaturesSection = () => {
                   {feature.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

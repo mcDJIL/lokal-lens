@@ -3,17 +3,22 @@
 import Image from 'next/image';
 
 interface EventCardProps {
+  id?: number;
   title: string;
+  slug?: string;
   date: string;
   location: string;
   price: string | null;
   image: string;
-  status: 'TERSEDIA' | 'GRATIS' | 'HABIS';
+  status: 'TERSEDIA' | 'GRATIS' | 'HABIS' | 'DIBATALKAN' | 'SELESAI';
   statusColor: 'red' | 'green' | 'gray';
+  category?: string | null;
+  views?: number;
 }
 
 export default function EventCard({
   title,
+  slug,
   date,
   location,
   price,
@@ -27,8 +32,8 @@ export default function EventCard({
     gray: 'bg-[#6B7280]',
   };
 
-  const isDisabled = status === 'HABIS';
-  const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+  const isDisabled = status === 'HABIS' || status === 'DIBATALKAN' || status === 'SELESAI';
+  const eventSlug = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
   return (
     <div className="group relative bg-white rounded-xl border border-[#EAE3D9] shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
@@ -83,7 +88,7 @@ export default function EventCard({
             </div>
           )}
           <a
-            href={isDisabled ? undefined : `/event-budaya/${slug}`}
+            href={isDisabled ? undefined : `/event-budaya/${eventSlug}`}
             className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-300 ${
               isDisabled
                 ? 'border-[#9CA3AF] text-[#9CA3AF] cursor-not-allowed pointer-events-none'

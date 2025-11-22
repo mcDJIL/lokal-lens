@@ -1,53 +1,81 @@
 'use client';
 
+import { use, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import HeroSection from '@/components/sections/KuisPembahasan/HeroSection';
 import QuestionCard from '@/components/sections/KuisPembahasan/QuestionCard';
 import ActionButtons from '@/components/sections/KuisPembahasan/ActionButtons';
 
-export default function PembahasanKuisPage() {
+export default function PembahasanKuisPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: slug } = use(params);
   const router = useRouter();
-  const params = useParams();
-  const quizId = params.id;
+  const searchParams = useSearchParams();
+  const attemptId = searchParams.get('attemptId');
 
-  const quizData = {
-    title: 'Jelajah Candi Nusantara',
-    questions: [
-      {
-        id: 1,
-        question: 'Candi Buddha terbesar di dunia yang terletak di Magelang adalah...',
-        isCorrect: true,
-        correctAnswer: 'Candi Borobudur',
-        userAnswer: null,
-        explanation: 'Candi Borobudur adalah monumen Buddha Mahayana abad ke-9 di Magelang, Jawa Tengah, Indonesia. Monumen ini terdiri atas sembilan teras berundak, enam berbentuk bujur sangkar dan tiga berbentuk bundar, dengan sebuah stupa induk di puncaknya.'
-      },
-      {
-        id: 2,
-        question: 'Relief Ramayana yang sangat terkenal terpahat di candi...',
-        isCorrect: false,
-        correctAnswer: 'Candi Prambanan',
-        userAnswer: 'Candi Sewu',
-        explanation: 'Kisah Ramayana terukir pada dinding pagar langkan Candi Siwa di kompleks Candi Prambanan. Relief ini dibaca dari kanan ke kiri mengelilingi candi sesuai arah pradaksina.'
-      },
-      {
-        id: 3,
-        question: 'Candi manakah yang dikenal dengan sebutan "Candi Ramping"?',
-        isCorrect: true,
-        correctAnswer: 'Candi Prambanan',
-        userAnswer: null,
-        explanation: 'Candi Prambanan memiliki bentuk yang tinggi dan ramping, yang merupakan ciri khas arsitektur candi Hindu, menjadikannya salah satu candi terindah di Asia Tenggara.'
+  const [quizData, setQuizData] = useState({
+    title: '',
+    questions: [] as Array<{
+      questionNumber: number;
+      question: string;
+      imageUrl: string | null;
+      isCorrect: boolean;
+      userAnswer: string;
+      correctAnswer: string;
+      explanation: string;
+    }>,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (attemptId) {
+      fetchQuizResult();
+    }
+  }, [attemptId]);
+
+  const fetchQuizResult = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/quizzes/attempts/${attemptId}/complete`);
+      const data = await response.json();
+
+      if (data.success) {
+        setQuizData({
+          title: data.data.quizTitle,
+          questions: data.data.answers,
+        });
       }
-    ]
+    } catch (error) {
+      console.error('Error fetching quiz result:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRetakeQuiz = () => {
-    router.push(`/kuis/${quizId}/detail`);
+    router.push(`/kuis/${slug}/detail`);
   };
 
   const handleBackToQuizList = () => {
     router.push('/kuis');
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="animate-pulse">
+            <div className="h-12 bg-gray-200 rounded w-1/2 mb-8"></div>
+            <div className="space-y-6">
+              <div className="h-64 bg-gray-200 rounded-2xl"></div>
+              <div className="h-64 bg-gray-200 rounded-2xl"></div>
+              <div className="h-64 bg-gray-200 rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -62,7 +90,7 @@ export default function PembahasanKuisPage() {
         >
           {quizData.questions.map((question, index) => (
             <QuestionCard
-              key={question.id}
+              key={index}
               question={question}
               index={index}
             />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, CultureCategory } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const lat = parseFloat(searchParams.get('lat') || '0');
     const lng = parseFloat(searchParams.get('lng') || '0');
     const radius = parseFloat(searchParams.get('radius') || '1000'); // Default 1000km
-    const category = searchParams.get('category') || '';
+    const categoryParam = searchParams.get('category') || '';
 
     if (!lat || !lng) {
       return NextResponse.json(
@@ -39,16 +39,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Build where clause
+    const whereClause: any = {
+      latitude: { not: null },
+      longitude: { not: null },
+      status: 'active',
+    };
+
+    // Add category filter if provided
+    if (categoryParam) {
+      // Convert string to lowercase CultureCategory enum
+      const categoryValue = categoryParam.toLowerCase() as CultureCategory;
+      whereClause.category = categoryValue;
+    }
+
     // Ambil semua budaya dengan koordinat
     const cultures = await prisma.culture.findMany({
-      where: {
-        AND: [
-          { lat: { not: null } },
-          { long: { not: null } },
-          { status: 'published' },
-          category ? { category } : {},
-        ],
-      },
+      where: whereClause,
       include: {
         images: {
           where: {
@@ -59,14 +66,25 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log(`Found ${cultures.length} cultures with coordinates`);
+    console.log('Where clause:', whereClause);
+    if (cultures.length > 0) {
+      console.log('Sample culture:', {
+        name: cultures[0].name,
+        lat: cultures[0].latitude,
+        lng: cultures[0].longitude,
+        province: cultures[0].province,
+      });
+    }
+
     // Filter berdasarkan jarak
     const nearbyCultures = cultures
       .map((culture: any) => {
         const distance = calculateDistance(
           lat,
           lng,
-          culture.lat!,
-          culture.long!
+          culture.latitude!,
+          culture.longitude!
         );
 
         return {
@@ -79,8 +97,8 @@ export async function GET(request: NextRequest) {
           location: culture.location,
           province: culture.province,
           city: culture.city,
-          lat: culture.lat,
-          long: culture.long,
+          lat: culture.latitude,
+          long: culture.longitude,
           thumbnail: culture.thumbnail,
           is_endangered: culture.is_endangered,
           distance: Math.round(distance * 10) / 10, // Bulatkan ke 1 desimal
@@ -98,7 +116,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching nearby cultures:', error);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat mengambil data budaya' },
+      { error: 'Terjadi kesalahan saat mengambil data budaya' + error },
       { status: 500 }
     );
   }

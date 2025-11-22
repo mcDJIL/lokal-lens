@@ -1,9 +1,26 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
-const HeroSection = () => {
+interface QuizDetail {
+  id: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  thumbnail: string | null;
+  category: string | null;
+  difficulty: string;
+  time_limit: number | null;
+  total_questions: number;
+  total_attempts: number;
+}
+
+interface HeroSectionProps {
+  quiz: QuizDetail;
+  onStartQuiz: () => void;
+}
+
+const HeroSection = ({ quiz, onStartQuiz }: HeroSectionProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -15,13 +32,10 @@ const HeroSection = () => {
             {/* Heading and Description */}
             <div className="flex flex-col gap-4">
               <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-extrabold leading-tight lg:leading-[60px] tracking-[-1.98px] text-[#0D121B] transition-all duration-300 hover:text-[#3D3B8E]">
-                Kuis Budaya
-                <br />
-                Nusantara
+                {quiz.title}
               </h1>
               <p className="text-base sm:text-lg leading-7 font-normal text-[#4C669A]">
-                Uji wawasanmu tentang kekayaan budaya Indonesia! Pelajari fakta
-                menarik seputar tradisi, seni, dan sejarah dalam kuis interaktif ini.
+                {quiz.description || 'Uji wawasanmu tentang kekayaan budaya Indonesia!'}
               </p>
             </div>
 
@@ -36,7 +50,7 @@ const HeroSection = () => {
                 </div>
                 <div className="flex flex-col gap-1">
                   <h3 className="text-base font-bold leading-5 text-[#0D121B]">
-                    Estimasi 5 Menit
+                    {quiz.time_limit ? `${quiz.time_limit} Menit` : 'Tanpa Batas'}
                   </h3>
                   <p className="text-sm font-normal leading-[21px] text-[#4C669A]">
                     Waktu Pengerjaan
@@ -53,7 +67,7 @@ const HeroSection = () => {
                 </div>
                 <div className="flex flex-col gap-1">
                   <h3 className="text-base font-bold leading-5 text-[#0D121B]">
-                    10 Pertanyaan
+                    {quiz.total_questions} Pertanyaan
                   </h3>
                   <p className="text-sm font-normal leading-[21px] text-[#4C669A]">
                     Jumlah Soal
@@ -63,7 +77,8 @@ const HeroSection = () => {
             </div>
 
             {/* CTA Button */}
-            <Link href={"/kuis/1/mulai"}
+            <button
+              onClick={onStartQuiz}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className="flex items-center justify-center h-14 px-8 rounded-3xl bg-[#3D3B8E] hover:bg-[#2E2B6B] shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 group"
@@ -81,7 +96,7 @@ const HeroSection = () => {
               >
                 <path d="M8.5 5L13.5 10L8.5 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </Link>
+            </button>
           </div>
 
           {/* Right Image */}
@@ -89,7 +104,7 @@ const HeroSection = () => {
             <div className="relative w-full max-w-[514px] aspect-square p-4">
               <div className="absolute inset-0 bg-gradient-to-br from-[#3D3B8E]/10 to-[#F4B400]/10 rounded-full blur-3xl animate-pulse"></div>
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/f2c580a209950d0a473d95dce05ab74bb34d30f4?width=1028"
+                src={quiz.thumbnail || 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80'}
                 alt="Indonesian Cultural Illustration"
                 className="relative w-full h-full object-contain rounded-2xl transform transition-transform duration-700 hover:scale-105 hover:rotate-1"
               />

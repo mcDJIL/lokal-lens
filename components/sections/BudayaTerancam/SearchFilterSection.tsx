@@ -1,15 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { motion } from 'framer-motion';
 
-const SearchFilterSection = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [isJenisAncamanOpen, setIsJenisAncamanOpen] = useState(false);
-  const [isLokasiOpen, setIsLokasiOpen] = useState(false);
+interface SearchFilterSectionProps {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  selectedStatus: string;
+  setSelectedStatus: (value: string) => void;
+  selectedThreatType: string;
+  setSelectedThreatType: (value: string) => void;
+  selectedProvince: string;
+  setSelectedProvince: (value: string) => void;
+  onReset: () => void;
+}
+
+const SearchFilterSection = ({
+  searchQuery,
+  setSearchQuery,
+  selectedStatus,
+  setSelectedStatus,
+  selectedThreatType,
+  setSelectedThreatType,
+  selectedProvince,
+  setSelectedProvince,
+  onReset,
+}: SearchFilterSectionProps) => {
+  const provinces = [
+    'Semua Provinsi',
+    'Jawa Barat',
+    'Jawa Tengah',
+    'Jawa Timur',
+    'DI Yogyakarta',
+    'Bali',
+    'Sumatera Utara',
+    'Sumatera Selatan',
+    'Aceh',
+  ];
 
   return (
-    <section className="w-full bg-white border-t border-[rgba(0,0,0,0.1)]">
+    <motion.section 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="w-full bg-white border-t border-[rgba(0,0,0,0.1)]"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20 py-6">
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4 p-4 border border-[rgba(0,0,0,0.1)] rounded-xl bg-white">
@@ -32,52 +66,65 @@ const SearchFilterSection = () => {
 
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative">
-                <button
-                  onClick={() => setIsStatusOpen(!isStatusOpen)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors"
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-sm font-medium leading-5 border-none outline-none appearance-none pr-10"
                 >
-                  <span className="text-[#1A1A1A] text-sm font-medium leading-5">Status</span>
-                  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 14.5L5.83337 10.3333H14.1667L10 14.5Z" fill="#1A1A1A" fillOpacity="0.7"/>
-                  </svg>
-                </button>
+                  <option value="">Semua Status</option>
+                  <option value="pending">Menunggu</option>
+                  <option value="approved">Disetujui</option>
+                  <option value="rejected">Ditolak</option>
+                </select>
               </div>
 
               <div className="relative">
-                <button
-                  onClick={() => setIsJenisAncamanOpen(!isJenisAncamanOpen)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors"
+                <select
+                  value={selectedThreatType}
+                  onChange={(e) => setSelectedThreatType(e.target.value)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-sm font-medium leading-5 border-none outline-none appearance-none pr-10"
                 >
-                  <span className="text-[#1A1A1A] text-sm font-medium leading-5">Jenis Ancaman</span>
-                  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 14.5L5.83337 10.3333H14.1667L10 14.5Z" fill="#1A1A1A" fillOpacity="0.7"/>
-                  </svg>
-                </button>
+                  <option value="">Semua Ancaman</option>
+                  <option value="Modernisasi">Modernisasi</option>
+                  <option value="Kurangnya Minat">Kurangnya Minat</option>
+                  <option value="Urbanisasi">Urbanisasi</option>
+                  <option value="Tekanan Ekonomi">Tekanan Ekonomi</option>
+                  <option value="Bencana Alam">Bencana Alam</option>
+                  <option value="Konflik">Konflik</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
               </div>
 
               <div className="relative">
-                <button
-                  onClick={() => setIsLokasiOpen(!isLokasiOpen)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors"
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(e.target.value)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-sm font-medium leading-5 border-none outline-none appearance-none pr-10"
                 >
-                  <span className="text-[#1A1A1A] text-sm font-medium leading-5">Lokasi</span>
-                  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 14.5L5.83337 10.3333H14.1667L10 14.5Z" fill="#1A1A1A" fillOpacity="0.7"/>
-                  </svg>
-                </button>
+                  {provinces.map((prov) => (
+                    <option key={prov} value={prov === 'Semua Provinsi' ? '' : prov}>
+                      {prov}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onReset}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors"
+              >
                 <span className="text-primary-red text-sm font-medium leading-5">Hapus Filter</span>
                 <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5.33329 17.833L4.16663 16.6663L8.83329 11.9997L4.16663 7.33301L5.33329 6.16634L9.99996 10.833L14.6666 6.16634L15.8333 7.33301L11.1666 11.9997L15.8333 16.6663L14.6666 17.833L9.99996 13.1663L5.33329 17.833Z" fill="#C0392B"/>
                 </svg>
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 };
 

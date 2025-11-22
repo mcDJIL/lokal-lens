@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 const ValuesSection = () => {
   const values = [
     {
@@ -29,27 +33,63 @@ const ValuesSection = () => {
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut"
+      }
+    }
+  };
+
   return (
     <section className="w-full py-12 sm:py-16 lg:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {values.map((value, index) => (
-            <div 
+            <motion.div 
               key={index}
               className="flex flex-col p-6 rounded-[32px] border border-[rgba(74,44,42,0.1)] bg-white hover:shadow-lg transition-shadow"
+              variants={cardVariants}
+              whileHover={{ scale: 1.05, transition: { duration: 0.3 } }}
             >
-              <div className="mb-4">
+              <motion.div 
+                className="mb-4"
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.2 + 0.3 }}
+              >
                 {value.icon}
-              </div>
+              </motion.div>
               <h3 className="text-lg font-bold leading-[22.5px] text-[#4A2C2A] mb-2">
                 {value.title}
               </h3>
               <p className="text-sm font-normal leading-[21px] text-[#6F5E5D]">
                 {value.description}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

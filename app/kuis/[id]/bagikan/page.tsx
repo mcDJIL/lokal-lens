@@ -1,20 +1,65 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 export default function ShareAchievementPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [shareMessage, setShareMessage] = useState(
-    'Saya baru saja menyelesaikan Kuis Jelajah Candi Nusantara di Lokallens dan mendapat skor 85! Ternyata budaya Indonesia sangat menakjubkan. Ayo coba juga!'
-  );
-  const [copied, setCopied] = useState(false);
+  const { id: slug } = use(params);
+  const searchParams = useSearchParams();
+  const attemptId = searchParams.get('attemptId');
 
-  const shareUrl = `https://lokallens.id/kuis/hasil/xyz123`;
-  const score = 85;
-  const quizTitle = 'Kuis Jelajah Candi Nusantara';
+  const [quizData, setQuizData] = useState({
+    score: 0,
+    percentage: 0,
+    quizTitle: '',
+    correctAnswers: 0,
+    totalQuestions: 0,
+  });
+  const [shareMessage, setShareMessage] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const shareUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/kuis/${slug}/skor?attemptId=${attemptId}`
+    : '';
+
+  useEffect(() => {
+    if (attemptId) {
+      fetchQuizResult();
+    }
+  }, [attemptId]);
+
+  const fetchQuizResult = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/quizzes/attempts/${attemptId}/complete`);
+      const data = await response.json();
+
+      if (data.success) {
+        const result = data.data;
+        const percentage = Math.round(result.percentage || 0);
+        
+        setQuizData({
+          score: result.score || 0,
+          percentage: percentage,
+          quizTitle: result.quizTitle || '',
+          correctAnswers: result.correctAnswers || 0,
+          totalQuestions: result.totalQuestions || 0,
+        });
+
+        // Generate default share message
+        const defaultMessage = `Saya baru saja menyelesaikan ${result.quizTitle} di Lokallens dan mendapat skor ${percentage}%! Ternyata budaya Indonesia sangat menakjubkan. Ayo coba juga!`;
+        setShareMessage(defaultMessage);
+      }
+    } catch (error) {
+      console.error('Error fetching quiz result:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopyLink = async () => {
     try {
@@ -51,6 +96,31 @@ export default function ShareAchievementPage({ params }: { params: Promise<{ id:
     
     window.open(url, '_blank', 'width=600,height=400');
   };
+
+  if (loading) {
+    return (
+      <>
+        <main className="min-h-screen bg-white">
+          <div className="max-w-[672px] mx-auto px-4 py-12 sm:py-20">
+            <div className="animate-pulse">
+              <div className="h-10 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
+              <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
+              <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8">
+                <div className="h-32 bg-gray-200 rounded mb-6"></div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                  <div className="h-24 bg-gray-200 rounded"></div>
+                  <div className="h-24 bg-gray-200 rounded"></div>
+                  <div className="h-24 bg-gray-200 rounded"></div>
+                  <div className="h-24 bg-gray-200 rounded"></div>
+                </div>
+                <div className="h-12 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -108,8 +178,8 @@ export default function ShareAchievementPage({ params }: { params: Promise<{ id:
             </h1>
             <p className="text-base font-normal leading-6 text-center text-[#4B5563]">
               Anda meraih skor{' '}
-              <span className="font-bold text-[#006C84]">{score} Poin</span>
-              {' '}dalam {quizTitle}. Sebarkan semangatmu!
+              <span className="font-bold text-[#006C84]">{quizData.percentage}% ({quizData.correctAnswers}/{quizData.totalQuestions})</span>
+              {' '}dalam {quizData.quizTitle}. Sebarkan semangatmu!
             </p>
           </motion.div>
 
@@ -289,7 +359,7 @@ export default function ShareAchievementPage({ params }: { params: Promise<{ id:
             variants={itemVariants}
           >
             <motion.a
-              href={`/kuis/${id}`}
+              href={`/kuis/${slug}/skor?attemptId=${attemptId}`}
               className="text-base font-normal leading-6 text-[#006C84] hover:underline transition-all"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

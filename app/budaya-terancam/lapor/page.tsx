@@ -1,6 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Toast from '@/components/ui/Toast';
+
+interface ToastState {
+  show: boolean;
+  message: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+}
 
 export default function LaporBudayaTerancamPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +23,24 @@ export default function LaporBudayaTerancamPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [mapUrl, setMapUrl] = useState('https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15865.074847874595!2d106.82715!3d-6.1750999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMTAnMzAuNCJTIDEwNsKwNDknMzcuNyJF!5e0!3m2!1sen!2sid!4v1234567890');
+  const [toast, setToast] = useState<ToastState>({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type: ToastState['type']) => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ show: false, message: '', type: 'info' });
+  };
+
+  // Update map when location changes
+  useEffect(() => {
+    if (formData.lokasi && formData.lokasi.length > 3) {
+      const encodedLocation = encodeURIComponent(formData.lokasi);
+      setMapUrl(`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedLocation}&zoom=14`);
+    }
+  }, [formData.lokasi]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -102,37 +127,113 @@ export default function LaporBudayaTerancamPage() {
     }
 
     setErrors(newErrors);
+    
+    // Show validation toast if there are errors
+    if (Object.keys(newErrors).length > 0) {
+      const errorMessages = Object.values(newErrors);
+      showToast(`❌ ${errorMessages[0]}`, 'error');
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form submitted!');
+    console.log('Form data:', formData);
 
     if (!validateForm()) {
+      console.log('Validation failed');
       return;
     }
 
     setIsSubmitting(true);
+    console.log('Starting submission...');
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      let imageUrl = null;
 
-    console.log('Form submitted:', formData, selectedFile);
-    
-    // Show success message and reset form
-    alert('Laporan berhasil dikirim! Terima kasih atas partisipasi Anda.');
-    
-    setFormData({
-      namaBudaya: '',
-      jenisAncaman: '',
-      deskripsi: '',
-      lokasi: '',
-      nama: '',
-      email: '',
-      isAnonim: false,
-    });
-    setSelectedFile(null);
-    setIsSubmitting(false);
+      // Upload file if exists
+      if (selectedFile) {
+        console.log('Uploading file:', selectedFile.name);
+        showToast('📤 Mengunggah file...', 'info');
+        
+        const fileFormData = new FormData();
+        fileFormData.append('file', selectedFile);
+
+        const uploadResponse = await fetch('/api/endangered-reports/upload', {
+          method: 'POST',
+          body: fileFormData,
+        });
+
+        console.log('Upload response status:', uploadResponse.status);
+        const uploadData = await uploadResponse.json();
+        console.log('Upload response data:', uploadData);
+        
+        if (uploadData.success) {
+          imageUrl = uploadData.fileUrl;
+          console.log('File uploaded successfully:', imageUrl);
+          showToast('✅ File berhasil diunggah!', 'success');
+        } else {
+          console.error('File upload failed:', uploadData);
+          showToast(`❌ Upload file gagal: ${uploadData.message}`, 'error');
+        }
+      }
+
+      // Extract province and city from location
+      const locationParts = formData.lokasi.split(',').map(s => s.trim());
+      const city = locationParts.length > 0 ? locationParts[0] : formData.lokasi;
+      const province = locationParts.length > 1 ? locationParts[1] : null;
+
+      const reportPayload = {
+        culture_name: formData.namaBudaya,
+        threat_type: formData.jenisAncaman,
+        description: formData.deskripsi,
+        location: formData.lokasi,
+        province,
+        city,
+        image_url: imageUrl,
+        reporter_name: formData.isAnonim ? null : (formData.nama || null),
+        reporter_email: formData.isAnonim ? null : (formData.email || null),
+        is_anonymous: formData.isAnonim,
+        user_id: null,
+      };
+
+      console.log('Submitting report:', reportPayload);
+
+      // Submit report
+      const reportResponse = await fetch('/api/endangered-reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportPayload),
+      });
+
+      console.log('Report response status:', reportResponse.status);
+      const reportData = await reportResponse.json();
+      console.log('Report response data:', reportData);
+
+      if (reportData.success) {
+        console.log('Report submitted successfully!');
+        showToast('✅ Laporan berhasil dikirim! Redirecting...', 'success');
+        
+        // Redirect to success page after showing toast
+        setTimeout(() => {
+          window.location.href = '/budaya-terancam/sukses';
+        }, 1500);
+      } else {
+        console.error('Report submission failed:', reportData);
+        showToast(`❌ Gagal mengirim laporan: ${reportData.message || 'Silakan coba lagi.'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      showToast(`❌ Terjadi kesalahan: ${error instanceof Error ? error.message : 'Silakan coba lagi.'}`, 'error');
+    } finally {
+      setIsSubmitting(false);
+      console.log('Submission process completed');
+    }
   };
 
   const removeFile = () => {
@@ -141,6 +242,14 @@ export default function LaporBudayaTerancamPage() {
 
   return (
     <main className="w-full bg-white min-h-screen">
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
+        />
+      )}
       {/* Hero Section */}
       <section className="w-full bg-white pt-8 md:pt-16 pb-8 md:pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -492,16 +601,19 @@ export default function LaporBudayaTerancamPage() {
                 <h3 className="text-[#1A1A1A] font-bold text-lg leading-7">
                   Peta Lokasi Ancaman
                 </h3>
-                <div className="w-full aspect-video bg-[#E5E7EB] rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer relative group">
-                  <img 
-                    src="https://api.builder.io/api/v1/image/assets/TEMP/81d797bff80da0dfbc36ef2bd101be414742c4ea?width=647" 
-                    alt="Map"
-                    className="w-full h-full object-cover"
+                <div className="w-full aspect-video bg-[#E5E7EB] rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] relative group">
+                  <iframe
+                    src={mapUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="w-full h-full"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                    <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 px-4 py-2 rounded-lg text-sm">
-                      Lihat Peta Lengkap
-                    </span>
+                  <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs text-gray-700 shadow-md">
+                    📍 {formData.lokasi || 'Masukkan lokasi di form'}
                   </div>
                 </div>
               </div>

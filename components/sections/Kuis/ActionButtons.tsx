@@ -1,22 +1,24 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 const ActionButtons = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const attemptId = searchParams.get('attemptId');
 
   const handleRetry = () => {
     router.push(`/kuis/${params.id}/mulai`);
   };
 
   const handleViewDiscussion = () => {
-    router.push(`/kuis/${params.id}/pembahasan`);
+    router.push(`/kuis/${params.id}/pembahasan?attemptId=${attemptId}`);
   };
 
   const handleShare = () => {
-    router.push(`/kuis/${params.id}/bagikan`);
+    router.push(`/kuis/${params.id}/bagikan?attemptId=${attemptId}`);
   };
 
   return (

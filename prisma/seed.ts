@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../lib/auth/utils';
+import { seedEndangeredReports } from './seeds/endangered_reports';
 
 const prisma = new PrismaClient();
 
@@ -718,6 +719,586 @@ async function main() {
   }
 
   console.log('✅ Culture images seeded');
+
+  // Seed Quizzes
+  console.log('\n🌱 Seeding quizzes...');
+
+  // Delete existing quizzes to avoid duplicate slug errors
+  await prisma.quizOption.deleteMany({});
+  await prisma.quizQuestion.deleteMany({});
+  await prisma.quiz.deleteMany({});
+
+  // Create Quiz 1: Jelajah Candi Nusantara
+  const quiz1 = await prisma.quiz.create({
+    data: {
+      title: 'Jelajah Candi Nusantara',
+      slug: 'jelajah-candi-nusantara',
+      description: 'Seberapa jauh pengetahuanmu tentang candi-candi megah yang tersebar di seluruh Indonesia?',
+      thumbnail: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80',
+      category: 'Candi',
+      difficulty: 'medium',
+      time_limit: 5,
+      total_questions: 10,
+      status: 'published',
+    },
+  });
+
+  // Create Quiz 2: Ragam Tarian Indonesia
+  const quiz2 = await prisma.quiz.create({
+    data: {
+      title: 'Ragam Tarian Indonesia',
+      slug: 'ragam-tarian-indonesia',
+      description: 'Kenali berbagai tarian tradisional dari Sabang sampai Merauke dalam kuis yang seru ini.',
+      thumbnail: 'https://images.unsplash.com/photo-1555992336-fb0d29498b13?w=800&q=80',
+      category: 'Tarian',
+      difficulty: 'easy',
+      time_limit: 3,
+      total_questions: 10,
+      status: 'published',
+    },
+  });
+
+  // Create Quiz 3: Cita Rasa Kuliner Khas
+  const quiz3 = await prisma.quiz.create({
+    data: {
+      title: 'Cita Rasa Kuliner Khas',
+      slug: 'cita-rasa-kuliner-khas',
+      description: 'Tebak nama dan asal masakan tradisional Indonesia. Awas, bikin lapar!',
+      thumbnail: 'https://images.unsplash.com/photo-1604429278231-e5d2d3e2e00c?w=800&q=80',
+      category: 'Kuliner',
+      difficulty: 'medium',
+      time_limit: 7,
+      total_questions: 10,
+      status: 'published',
+    },
+  });
+
+  console.log(`✅ ${3} quizzes created`);
+
+  // Create Questions for Quiz 1: Jelajah Candi Nusantara
+  const q1 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Candi manakah yang reliefnya menceritakan kisah Ramayana dan Krishnayana?',
+      image_url: 'https://images.unsplash.com/photo-1591178825729-928ea0a0fe95?w=800&q=80',
+      explanation: 'Jawaban yang tepat. Relief Ramayana di Candi Prambanan terpahat pada dinding pagar langkan Candi Siwa dan Candi Brahma, memberikan narasi visual yang luar biasa.',
+      order_number: 1,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q1.id, option_text: 'Candi Borobudur', is_correct: false, order_number: 1 },
+      { question_id: q1.id, option_text: 'Candi Prambanan', is_correct: true, order_number: 2 },
+      { question_id: q1.id, option_text: 'Candi Sewu', is_correct: false, order_number: 3 },
+      { question_id: q1.id, option_text: 'Candi Plaosan', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q2 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Candi Buddha terbesar di dunia yang terletak di Magelang adalah...',
+      image_url: 'https://images.unsplash.com/photo-1555400082-6e33d2fc4a21?w=800&q=80',
+      explanation: 'Candi Borobudur adalah monumen Buddha Mahayana abad ke-9 di Magelang, Jawa Tengah, Indonesia. Monumen ini terdiri atas sembilan teras berundak, enam berbentuk bujur sangkar dan tiga berbentuk bundar, dengan sebuah stupa induk di puncaknya.',
+      order_number: 2,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q2.id, option_text: 'Candi Borobudur', is_correct: true, order_number: 1 },
+      { question_id: q2.id, option_text: 'Candi Mendut', is_correct: false, order_number: 2 },
+      { question_id: q2.id, option_text: 'Candi Pawon', is_correct: false, order_number: 3 },
+      { question_id: q2.id, option_text: 'Candi Kalasan', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q3 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Siapakah arsitek yang merancang pembangunan Candi Borobudur?',
+      image_url: 'https://images.unsplash.com/photo-1555400082-6e33d2fc4a21?w=800&q=80',
+      explanation: 'Gunadharma adalah arsitek legendaris yang dipercaya merancang Candi Borobudur pada masa Dinasti Syailendra.',
+      order_number: 3,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q3.id, option_text: 'Gunadharma', is_correct: true, order_number: 1 },
+      { question_id: q3.id, option_text: 'Empu Sindok', is_correct: false, order_number: 2 },
+      { question_id: q3.id, option_text: 'Mpu Prapanca', is_correct: false, order_number: 3 },
+      { question_id: q3.id, option_text: 'Rakai Panangkaran', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q4 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Candi Prambanan dibangun pada abad ke...',
+      explanation: 'Candi Prambanan dibangun pada abad ke-9 Masehi oleh Rakai Pikatan dari dinasti Sanjaya atau Balitung Maha Sambu.',
+      order_number: 4,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q4.id, option_text: 'Abad ke-7', is_correct: false, order_number: 1 },
+      { question_id: q4.id, option_text: 'Abad ke-8', is_correct: false, order_number: 2 },
+      { question_id: q4.id, option_text: 'Abad ke-9', is_correct: true, order_number: 3 },
+      { question_id: q4.id, option_text: 'Abad ke-10', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q5 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Berapa jumlah stupa di Candi Borobudur?',
+      explanation: 'Candi Borobudur memiliki 504 arca Buddha dan 72 stupa berlubang yang mengelilingi stupa induk di puncaknya.',
+      order_number: 5,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q5.id, option_text: '504 stupa', is_correct: false, order_number: 1 },
+      { question_id: q5.id, option_text: '72 stupa', is_correct: true, order_number: 2 },
+      { question_id: q5.id, option_text: '108 stupa', is_correct: false, order_number: 3 },
+      { question_id: q5.id, option_text: '360 stupa', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q6 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Candi yang terletak di Jawa Timur dan merupakan peninggalan Kerajaan Singhasari adalah...',
+      image_url: 'https://images.unsplash.com/photo-1601024445121-e5b82f020549?w=800&q=80',
+      explanation: 'Candi Singosari terletak di Kabupaten Malang, Jawa Timur, dan merupakan peninggalan Kerajaan Singhasari yang didirikan sekitar tahun 1304 M.',
+      order_number: 6,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q6.id, option_text: 'Candi Penataran', is_correct: false, order_number: 1 },
+      { question_id: q6.id, option_text: 'Candi Singosari', is_correct: true, order_number: 2 },
+      { question_id: q6.id, option_text: 'Candi Jago', is_correct: false, order_number: 3 },
+      { question_id: q6.id, option_text: 'Candi Kidal', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q7 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Apa fungsi utama Candi Borobudur pada masa dibangun?',
+      explanation: 'Candi Borobudur dibangun sebagai tempat ibadah umat Buddha dan tempat ziarah menuju kesempurnaan spiritual.',
+      order_number: 7,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q7.id, option_text: 'Istana Raja', is_correct: false, order_number: 1 },
+      { question_id: q7.id, option_text: 'Tempat ibadah dan ziarah', is_correct: true, order_number: 2 },
+      { question_id: q7.id, option_text: 'Makam kerajaan', is_correct: false, order_number: 3 },
+      { question_id: q7.id, option_text: 'Benteng pertahanan', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q8 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Candi yang memiliki relief cerita Ramayana paling lengkap adalah...',
+      explanation: 'Candi Prambanan memiliki relief cerita Ramayana yang sangat lengkap, terpahat di dinding Candi Siwa.',
+      order_number: 8,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q8.id, option_text: 'Candi Borobudur', is_correct: false, order_number: 1 },
+      { question_id: q8.id, option_text: 'Candi Prambanan', is_correct: true, order_number: 2 },
+      { question_id: q8.id, option_text: 'Candi Sewu', is_correct: false, order_number: 3 },
+      { question_id: q8.id, option_text: 'Candi Mendut', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q9 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Pada tahun berapa Candi Borobudur ditetapkan sebagai Situs Warisan Dunia UNESCO?',
+      explanation: 'Candi Borobudur ditetapkan sebagai Situs Warisan Dunia UNESCO pada tahun 1991.',
+      order_number: 9,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q9.id, option_text: '1982', is_correct: false, order_number: 1 },
+      { question_id: q9.id, option_text: '1991', is_correct: true, order_number: 2 },
+      { question_id: q9.id, option_text: '2000', is_correct: false, order_number: 3 },
+      { question_id: q9.id, option_text: '2010', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  const q10 = await prisma.quizQuestion.create({
+    data: {
+      quiz_id: quiz1.id,
+      question: 'Apa nama kompleks candi yang berada di sekitar Candi Prambanan?',
+      explanation: 'Di sekitar Candi Prambanan terdapat kompleks candi lain seperti Candi Sewu, Candi Lumbung, Candi Bubrah, dan Candi Plaosan.',
+      order_number: 10,
+      points: 100,
+    },
+  });
+
+  await prisma.quizOption.createMany({
+    data: [
+      { question_id: q10.id, option_text: 'Candi Borobudur dan Mendut', is_correct: false, order_number: 1 },
+      { question_id: q10.id, option_text: 'Candi Sewu dan Plaosan', is_correct: true, order_number: 2 },
+      { question_id: q10.id, option_text: 'Candi Singosari dan Penataran', is_correct: false, order_number: 3 },
+      { question_id: q10.id, option_text: 'Candi Kalasan dan Sari', is_correct: false, order_number: 4 },
+    ],
+  });
+
+  console.log(`✅ 10 questions and 40 options created for quiz: ${quiz1.title}`);
+
+  console.log('✅ Quiz seeding completed');
+
+  // Seed Events
+  console.log('\n🌱 Seeding events...');
+
+  // Delete existing events to avoid duplicate slug errors
+  await prisma.event.deleteMany({});
+
+  const event1 = await prisma.event.create({
+    data: {
+      title: 'Gelar Seni & Pesta Rakyat 2024',
+      slug: 'gelar-seni-pesta-rakyat-2024',
+      description: 'Sebuah perayaan akbar kekayaan budaya nusantara melalui musik, tari, dan kuliner tradisional.',
+      long_description: 'Gelar Seni & Pesta Rakyat 2024 adalah sebuah inisiatif untuk merayakan dan melestarikan warisan budaya Indonesia yang kaya dan beragam. Acara ini akan menjadi panggung bagi para seniman dari berbagai daerah untuk menampilkan keahlian mereka, mulai dari tarian tradisional yang memesona, musik etnik yang menggugah jiwa, hingga pertunjukan wayang yang sarat makna.\n\nPengunjung akan diajak dalam sebuah perjalanan budaya, mencicipi aneka kuliner otentik dari seluruh nusantara, berpartisipasi dalam lokakarya kerajinan tangan, dan menikmati suasana pesta rakyat yang hangat dan meriah. Acara ini bertujuan untuk menginspirasi generasi muda agar lebih mencintai dan bangga akan budayanya sendiri.',
+      thumbnail: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1600&auto=format&fit=crop&q=80',
+      date_start: new Date('2024-08-17T10:00:00'),
+      date_end: new Date('2024-08-17T22:00:00'),
+      time_start: '10:00',
+      time_end: '22:00',
+      location_name: 'Plaza Tenggara, Gelora Bung Karno',
+      location_city: 'Jakarta Pusat',
+      location_province: 'DKI Jakarta',
+      location_address: 'Jl. Pintu Satu Senayan, Jakarta Pusat 10270',
+      latitude: -6.2088,
+      longitude: 106.8019,
+      price: 50000,
+      status: 'available',
+      category: 'Festival',
+      organizer: 'Kementerian Pendidikan dan Kebudayaan',
+      views: 1250,
+      performers: {
+        create: [
+          {
+            name: 'Eko Supriyanto',
+            title: 'Maestro Tari Kontemporer',
+            description: 'Dikenal dengan karya-karyanya yang mendunia, Eko Supriyanto akan membawakan tarian yang menggabungkan gerak tradisional Jawa dengan sentuhan modern.',
+            image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+            order_number: 1,
+          },
+          {
+            name: 'I Wayan Sadra',
+            title: 'Komponis Gamelan Modern',
+            description: 'Seorang pionir dalam musik gamelan, I Wayan Sadra akan memimpin orkestra yang menyajikan komposisi inovatif dan memukau.',
+            image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+            order_number: 2,
+          },
+          {
+            name: 'Sanggar Tari Ayodya Pala',
+            title: 'Kolektif Tari Tradisional',
+            description: 'Grup tari ternama ini akan menampilkan ragam tarian klasik dari berbagai daerah di Indonesia dengan keanggunan dan presisi yang luar biasa.',
+            image_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80',
+            order_number: 3,
+          },
+          {
+            name: 'Didi Kempot Legacy',
+            title: 'Tribute Campursari',
+            description: 'Sebuah persembahan khusus untuk mengenang sang maestro, membawakan lagu-lagu campursari yang tak lekang oleh waktu.',
+            image_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
+            order_number: 4,
+          },
+        ],
+      },
+      galleries: {
+        create: [
+          {
+            image_url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Suasana panggung utama Gelar Seni.',
+            order_number: 1,
+          },
+          {
+            image_url: 'https://images.unsplash.com/photo-1555400082-8a2583bf4a1f?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Penampilan Sanggar Tari Ayodya Pala.',
+            order_number: 2,
+          },
+          {
+            image_url: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'I Wayan Sadra bersama gamelannya.',
+            order_number: 3,
+          },
+          {
+            image_url: 'https://images.unsplash.com/photo-1547153760-18fc9498a7e6?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Eko Supriyanto saat menari.',
+            order_number: 4,
+          },
+          {
+            image_url: 'https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Atribut panggung Didi Kempot Legacy.',
+            order_number: 5,
+          },
+        ],
+      },
+    },
+  });
+
+  const event2 = await prisma.event.create({
+    data: {
+      title: 'Festival Jazz Internasional',
+      slug: 'festival-jazz-internasional',
+      description: 'Nikmati alunan jazz dari musisi internasional dan lokal terbaik dalam festival musik tahunan yang memukau.',
+      long_description: 'Festival Jazz Internasional Jakarta kembali hadir dengan lineup artis internasional dan lokal yang luar biasa. Acara ini menampilkan berbagai genre jazz dari traditional, contemporary, hingga fusion. Pengunjung akan dimanjakan dengan pertunjukan dari musisi jazz ternama dunia serta talenta lokal yang tidak kalah memukau.',
+      thumbnail: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&auto=format&fit=crop&q=60',
+      date_start: new Date('2024-08-15T16:00:00'),
+      date_end: new Date('2024-08-17T23:00:00'),
+      time_start: '16:00',
+      time_end: '23:00',
+      location_name: 'JIExpo Kemayoran',
+      location_city: 'Jakarta Pusat',
+      location_province: 'DKI Jakarta',
+      location_address: 'Jl. Boulevard Barat Raya No.1, Jakarta Pusat',
+      latitude: -6.1477,
+      longitude: 106.8464,
+      price: 250000,
+      status: 'available',
+      category: 'Festival',
+      organizer: 'Java Festival Production',
+      views: 3420,
+      performers: {
+        create: [
+          {
+            name: 'Tompi',
+            title: 'Jazz Vocalist',
+            description: 'Penyanyi jazz Indonesia yang akan membawakan hits-nya dengan aransemen jazz yang segar.',
+            image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+            order_number: 1,
+          },
+          {
+            name: 'Joey Alexander',
+            title: 'Piano Jazz Prodigy',
+            description: 'Pianis muda berbakat Indonesia yang telah malang melintang di kancah jazz internasional.',
+            image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
+            order_number: 2,
+          },
+        ],
+      },
+      galleries: {
+        create: [
+          {
+            image_url: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Panggung utama Festival Jazz.',
+            order_number: 1,
+          },
+          {
+            image_url: 'https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Joey Alexander tampil memukau.',
+            order_number: 2,
+          },
+        ],
+      },
+    },
+  });
+
+  const event3 = await prisma.event.create({
+    data: {
+      title: 'Pekan Kesenian Bali',
+      slug: 'pekan-kesenian-bali',
+      description: 'Pesta seni dan budaya terbesar di Bali yang menampilkan tarian, musik, dan pertunjukan tradisional.',
+      long_description: 'Pekan Kesenian Bali (PKB) adalah festival seni dan budaya terbesar di Bali yang diselenggarakan setiap tahun. Acara ini menampilkan berbagai pertunjukan seni tradisional Bali seperti tari Barong, Kecak, Legong, gamelan, dan masih banyak lagi. PKB juga menjadi ajang kompetisi seni bagi sanggar-sanggar di Bali.',
+      thumbnail: 'https://images.unsplash.com/photo-1555400082-8a2583bf4a1f?w=800&auto=format&fit=crop&q=60',
+      date_start: new Date('2024-09-20T09:00:00'),
+      date_end: new Date('2024-09-20T21:00:00'),
+      time_start: '09:00',
+      time_end: '21:00',
+      location_name: 'Taman Budaya Art Centre',
+      location_city: 'Denpasar',
+      location_province: 'Bali',
+      location_address: 'Jl. Nusa Indah, Denpasar, Bali',
+      latitude: -8.6705,
+      longitude: 115.2126,
+      price: null,
+      status: 'free',
+      category: 'Festival',
+      organizer: 'Pemerintah Provinsi Bali',
+      views: 2150,
+      performers: {
+        create: [
+          {
+            name: 'Sanggar Seni Cudamani',
+            title: 'Gamelan & Tari Bali',
+            description: 'Sanggar seni ternama dari Bali yang akan menampilkan gamelan gong kebyar dan tari legong.',
+            image_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80',
+            order_number: 1,
+          },
+          {
+            name: 'I Made Sidia',
+            title: 'Dalang Wayang Bali',
+            description: 'Dalang muda berbakat yang akan mementaskan wayang kulit khas Bali.',
+            image_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80',
+            order_number: 2,
+          },
+        ],
+      },
+      galleries: {
+        create: [
+          {
+            image_url: 'https://images.unsplash.com/photo-1555400082-8a2583bf4a1f?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Tari Legong yang memukau.',
+            order_number: 1,
+          },
+          {
+            image_url: 'https://images.unsplash.com/photo-1547153760-18fc9498a7e6?w=500&auto=format&fit=crop&q=80',
+            alt_text: 'Gamelan Gong Kebyar.',
+            order_number: 2,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.event.createMany({
+    data: [
+      {
+        title: 'Pagelaran Wayang Kulit Semalam Suntuk',
+        slug: 'pagelaran-wayang-kulit-semalam-suntuk',
+        description: 'Saksikan pertunjukan wayang kulit klasik dengan dalang terkenal dalam acara semalam suntuk yang memukau.',
+        long_description: 'Pagelaran wayang kulit semalam suntuk ini menampilkan dalang kondang Ki Manteb Soedharsono yang akan mementaskan lakon Ramayana. Pertunjukan ini dilengkapi dengan gamelan lengkap dan sinden-sinden pilihan. Pengunjung akan diajak menyelami filosofi dan nilai-nilai kehidupan yang terkandung dalam setiap adegan.',
+        thumbnail: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&auto=format&fit=crop&q=60',
+        date_start: new Date('2024-10-05T20:00:00'),
+        date_end: new Date('2024-10-06T05:00:00'),
+        time_start: '20:00',
+        time_end: '05:00',
+        location_name: 'Pendopo Taman Siswa',
+        location_city: 'Yogyakarta',
+        location_province: 'DI Yogyakarta',
+        location_address: 'Jl. Taman Siswa No.25, Yogyakarta',
+        latitude: -7.8014,
+        longitude: 110.3691,
+        price: null,
+        status: 'sold_out',
+        category: 'Pertunjukan',
+        organizer: 'Yayasan Taman Siswa',
+        views: 4580,
+      },
+      {
+        title: 'Pameran Batik Nusantara',
+        slug: 'pameran-batik-nusantara',
+        description: 'Jelajahi keindahan dan keragaman batik dari seluruh Indonesia dalam pameran batik terbesar tahun ini.',
+        long_description: 'Pameran Batik Nusantara menghadirkan koleksi batik dari 34 provinsi di Indonesia. Pengunjung dapat melihat proses pembuatan batik, mengikuti workshop membatik, dan membeli batik langsung dari pengrajin. Pameran ini juga menampilkan fashion show batik modern dan talk show dengan desainer ternama.',
+        thumbnail: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=800&auto=format&fit=crop&q=60',
+        date_start: new Date('2024-11-10T10:00:00'),
+        date_end: new Date('2024-11-20T18:00:00'),
+        time_start: '10:00',
+        time_end: '18:00',
+        location_name: 'Solo Grand Mall',
+        location_city: 'Surakarta',
+        location_province: 'Jawa Tengah',
+        location_address: 'Jl. Slamet Riyadi No.451, Surakarta',
+        latitude: -7.5568,
+        longitude: 110.8192,
+        price: 50000,
+        status: 'available',
+        category: 'Pameran',
+        organizer: 'Dinas Perindustrian dan Perdagangan Kota Solo',
+        views: 890,
+      },
+      {
+        title: 'Festival Kesenian Yogyakarta',
+        slug: 'festival-kesenian-yogyakarta',
+        description: 'Festival seni tahunan yang menampilkan pertunjukan kontemporer dan tradisional dari seniman dalam dan luar negeri.',
+        long_description: 'Festival Kesenian Yogyakarta (FKY) adalah festival seni multidisiplin yang menampilkan pertunjukan teater, tari, musik, film, dan seni rupa. Festival ini menghadirkan seniman dari berbagai negara untuk berkolaborasi dengan seniman lokal, menciptakan karya-karya inovatif yang memadukan tradisi dan modernitas.',
+        thumbnail: 'https://images.unsplash.com/photo-1547153760-18fc9498a7e6?w=800&auto=format&fit=crop&q=60',
+        date_start: new Date('2024-09-01T10:00:00'),
+        date_end: new Date('2024-09-30T22:00:00'),
+        time_start: '10:00',
+        time_end: '22:00',
+        location_name: 'Taman Budaya Yogyakarta',
+        location_city: 'Yogyakarta',
+        location_province: 'DI Yogyakarta',
+        location_address: 'Jl. Sriwedani No.1, Yogyakarta',
+        latitude: -7.7956,
+        longitude: 110.3695,
+        price: null,
+        status: 'free',
+        category: 'Festival',
+        organizer: 'Dinas Kebudayaan DIY',
+        views: 5240,
+      },
+      {
+        title: 'Karnaval Budaya Jakarta',
+        slug: 'karnaval-budaya-jakarta',
+        description: 'Pawai budaya spektakuler yang menampilkan kostum dan tarian dari berbagai suku di Indonesia.',
+        long_description: 'Karnaval Budaya Jakarta adalah pawai tahunan yang menampilkan keberagaman budaya Indonesia. Ribuan peserta dari berbagai komunitas seni dan budaya akan memeriahkan jalanan Jakarta dengan kostum-kostum mewah, tarian energik, dan musik tradisional. Acara ini menjadi simbol persatuan dalam keberagaman.',
+        thumbnail: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&auto=format&fit=crop&q=60',
+        date_start: new Date('2024-08-24T08:00:00'),
+        date_end: new Date('2024-08-24T16:00:00'),
+        time_start: '08:00',
+        time_end: '16:00',
+        location_name: 'Bundaran HI - Monas',
+        location_city: 'Jakarta Pusat',
+        location_province: 'DKI Jakarta',
+        location_address: 'Dari Bundaran HI hingga Monas',
+        latitude: -6.1951,
+        longitude: 106.8229,
+        price: null,
+        status: 'free',
+        category: 'Karnaval',
+        organizer: 'Pemerintah Provinsi DKI Jakarta',
+        views: 8900,
+      },
+      {
+        title: 'Pekan Raya Sumatera Utara',
+        slug: 'pekan-raya-sumatera-utara',
+        description: 'Pesta rakyat dengan berbagai pertunjukan seni, kuliner khas, dan stan produk UMKM Sumatera Utara.',
+        long_description: 'Pekan Raya Sumatera Utara menampilkan kekayaan budaya dan produk lokal dari seluruh penjuru Sumut. Pengunjung dapat menikmati kuliner khas seperti saksang, arsik, dan bika ambon, menonton pertunjukan tortor dan gondang, serta berbelanja produk UMKM berkualitas.',
+        thumbnail: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&auto=format&fit=crop&q=60',
+        date_start: new Date('2024-07-20T10:00:00'),
+        date_end: new Date('2024-08-05T22:00:00'),
+        time_start: '10:00',
+        time_end: '22:00',
+        location_name: 'Lapangan Merdeka',
+        location_city: 'Medan',
+        location_province: 'Sumatera Utara',
+        location_address: 'Jl. Balai Kota, Medan',
+        latitude: 3.5952,
+        longitude: 98.6722,
+        price: 20000,
+        status: 'available',
+        category: 'Pameran',
+        organizer: 'Pemerintah Provinsi Sumatera Utara',
+        views: 2340,
+      },
+    ],
+  });
+
+  console.log(`✅ Events seeded: ${event1.title}, ${event2.title}, ${event3.title} + 5 more`);
+
+  // Seed endangered reports
+  await seedEndangeredReports();
 
   console.log('🎉 Seed completed successfully!');
 }

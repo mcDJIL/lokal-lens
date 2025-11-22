@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 interface Province {
   name: string;
@@ -107,10 +108,37 @@ const ProvinceCollectionSection = () => {
     );
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
+  };
+
   return (
     <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8 sm:mb-12"
+        >
           <h2 className="text-2xl sm:text-[28px] lg:text-[30px] font-bold leading-[30px] sm:leading-[35px] lg:leading-[37.5px] tracking-[-0.6px] text-[#333333] mb-3">
             Koleksi Pilihan Provinsi
           </h2>
@@ -118,13 +146,21 @@ const ProvinceCollectionSection = () => {
             Temukan keunikan budaya dari berbagai provinsi di Indonesia yang telah kami kurasi
             secara khusus untuk Anda.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+        >
           {displayProvinces.map((province, index) => (
-            <div
+            <motion.div
               key={`${province.name}-${index}`}
-              className="rounded-[32px] bg-white shadow-sm overflow-hidden flex flex-col"
+              variants={itemVariants}
+              whileHover={{ y: -8, scale: 1.02 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-[32px] bg-white shadow-sm overflow-hidden flex flex-col cursor-pointer"
             >
               <div className="relative h-48 overflow-hidden">
                 <img
@@ -150,19 +186,24 @@ const ProvinceCollectionSection = () => {
                 <p className="text-sm font-normal leading-5 text-[#618989] mb-4 flex-1">
                   {getDescription(province.name)}
                 </p>
-                <a
+                <motion.a
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
                   href={`/jelajahi?province=${encodeURIComponent(province.name)}`}
                   className="flex items-center gap-2 text-sm font-bold leading-5 text-[#00A99D] hover:text-[#008f85] transition-colors group"
                 >
                   <span>Jelajahi Sekarang</span>
-                  <svg width="25" height="28" viewBox="0 0 25 28" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-7 group-hover:translate-x-1 transition-transform">
+                  <motion.svg 
+                    whileHover={{ x: 3 }}
+                    width="25" height="28" viewBox="0 0 25 28" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-7"
+                  >
                     <path d="M16.0692 14.9723H4.23242V13.0278H16.0692L10.6248 7.58339L12.0102 6.22228L19.788 14.0001L12.0102 21.7778L10.6248 20.4167L16.0692 14.9723Z" fill="#00A99D"/>
-                  </svg>
-                </a>
+                  </motion.svg>
+                </motion.a>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

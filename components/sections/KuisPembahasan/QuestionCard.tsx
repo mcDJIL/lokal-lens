@@ -3,11 +3,12 @@
 import { motion } from 'framer-motion';
 
 interface Question {
-  id: number;
+  questionNumber: number;
   question: string;
+  imageUrl: string | null;
   isCorrect: boolean;
   correctAnswer: string;
-  userAnswer: string | null;
+  userAnswer: string;
   explanation: string;
 }
 
@@ -17,7 +18,7 @@ interface QuestionCardProps {
 }
 
 const QuestionCard = ({ question, index }: QuestionCardProps) => {
-  const { id, question: questionText, isCorrect, correctAnswer, userAnswer, explanation } = question;
+  const { questionNumber, question: questionText, imageUrl, isCorrect, correctAnswer, userAnswer, explanation } = question;
 
   const cardVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -70,8 +71,23 @@ const QuestionCard = ({ question, index }: QuestionCardProps) => {
             animate={{ opacity: 1 }}
             transition={{ delay: index * 0.1 + 0.3 }}
           >
-            {id}. {questionText}
+            {questionNumber}. {questionText}
           </motion.h3>
+
+          {imageUrl && (
+            <motion.div
+              className="w-full rounded-2xl overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1 + 0.35 }}
+            >
+              <img
+                src={imageUrl}
+                alt={`Gambar pertanyaan ${questionNumber}`}
+                className="w-full h-auto object-cover"
+              />
+            </motion.div>
+          )}
 
           <div className="flex flex-col gap-3">
             {!isCorrect && userAnswer && (

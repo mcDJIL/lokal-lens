@@ -119,7 +119,7 @@ export default function ScanBudayaPage() {
                 <div className="space-y-8">
                   <ScannerSection onScanComplete={handleScanComplete} />
                   <TipsSection />
-                  <RecommendationsSection />
+                  <RecommendationsSection scanResult={scanResult} />
                 </div>
                 <div className="space-y-8">
                   <ResultsSection data={scanResult} isLoading={isLoading} />

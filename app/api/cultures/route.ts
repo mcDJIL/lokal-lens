@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({
+      success: true,
       data: formattedCultures,
       pagination: {
         page,
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching cultures:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch cultures', details: error instanceof Error ? error.message : String(error) },
+      { success: false, error: 'Failed to fetch cultures', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   } finally {

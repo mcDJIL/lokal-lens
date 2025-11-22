@@ -1,5 +1,64 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { prisma } from "@/lib/prisma";
+
+// Helper function to extract object type from name
+function extractObjectType(name: string): string {
+  const lowerName = name.toLowerCase();
+  
+  const objectTypes: { [key: string]: string[] } = {
+    'batik': ['batik'],
+    'wayang': ['wayang'],
+    'keris': ['keris', 'tosan aji'],
+    'tari': ['tari', 'tarian'],
+    'gamelan': ['gamelan'],
+    'angklung': ['angklung'],
+    'alat musik': ['alat musik', 'musik', 'sasando', 'kolintang', 'salung'],
+    'rumah adat': ['rumah adat', 'rumah', 'tongkonan', 'gadang'],
+    'pakaian adat': ['pakaian adat', 'kebaya', 'ulos', 'songket'],
+    'makanan': ['makanan', 'kuliner', 'rendang', 'gudeg', 'soto'],
+    'senjata': ['senjata', 'mandau', 'badik', 'kujang'],
+    'kain': ['kain', 'tenun', 'ikat'],
+    'ukiran': ['ukiran', 'patung'],
+  };
+
+  for (const [type, keywords] of Object.entries(objectTypes)) {
+    for (const keyword of keywords) {
+      if (lowerName.includes(keyword)) {
+        return type;
+      }
+    }
+  }
+
+  return name.split(' ')[0];
+}
+
+// Helper function to get category from object type
+function getCategoryFromObjectType(objectType: string): string | undefined {
+  const categoryMap: { [key: string]: string } = {
+    'tari': 'tarian',
+    'tarian': 'tarian',
+    'gamelan': 'musik',
+    'angklung': 'musik',
+    'alat musik': 'musik',
+    'musik': 'musik',
+    'pakaian adat': 'pakaian',
+    'kebaya': 'pakaian',
+    'rumah adat': 'arsitektur',
+    'rumah': 'arsitektur',
+    'makanan': 'kuliner',
+    'kuliner': 'kuliner',
+    'batik': 'kerajinan',
+    'kain': 'kerajinan',
+    'tenun': 'kerajinan',
+    'ukiran': 'kerajinan',
+    'keris': 'senjata',
+    'senjata': 'senjata',
+    'wayang': 'kerajinan',
+  };
+
+  return categoryMap[objectType.toLowerCase()];
+}
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +81,28 @@ export async function POST(req: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    const prompt = `Analisis objek budaya Indonesia dalam gambar ini dengan detail dan spesifik. Identifikasi JENIS atau VARIAN SPESIFIK dari objek budaya tersebut, jangan hanya kategori umumnya dan menggunakan bahasa indonesia.
+    const prompt = `Analisis objek dalam gambar ini dan tentukan apakah ini adalah OBJEK BUDAYA INDONESIA yang ASLI dan SPESIFIK.
+
+PENTING - KRITERIA OBJEK BUDAYA INDONESIA YANG VALID:
+1. Harus merupakan objek fisik budaya tradisional Indonesia (batik, wayang, keris, alat musik tradisional, rumah adat, pakaian adat, tarian, dll)
+2. Memiliki asal daerah spesifik di Indonesia
+3. Bukan objek modern, bukan benda sehari-hari biasa, bukan makhluk hidup (kecuali dalam konteks budaya seperti wayang)
+4. Bukan objek budaya dari negara lain
+
+JIKA OBJEK BUKAN BUDAYA INDONESIA ATAU TIDAK JELAS:
+Berikan response dengan format:
+{
+  "name": "Objek Tidak Dikenali",
+  "location": "Tidak Diketahui",
+  "accuracy": "0%",
+  "description": "Objek dalam gambar bukan merupakan objek budaya Indonesia atau tidak dapat diidentifikasi dengan jelas. [Jelaskan singkat apa yang terlihat]",
+  "rarity": "Tidak Diketahui",
+  "unesco": "Tidak Terdaftar",
+  "image": ""
+}
+
+JIKA OBJEK ADALAH BUDAYA INDONESIA YANG VALID:
+Identifikasi JENIS atau VARIAN SPESIFIK dari objek budaya tersebut, jangan hanya kategori umumnya.
 
 CONTOH ANALISIS YANG BENAR:
 - Untuk batik: Identifikasi motifnya seperti "Batik Parang Rusak", "Batik Kawung", "Batik Mega Mendung", "Batik Truntum", dll.
@@ -50,8 +130,8 @@ PENTING:
 - Untuk field "image", SELALU berikan string kosong (""). Jangan isi dengan teks placeholder atau deskripsi.
 - Untuk field "name", WAJIB menyebutkan jenis/motif/varian spesifik, JANGAN hanya kategori umum (contoh: SALAH "Batik", BENAR "Batik Parang Rusak")
 - Untuk field "description", jelaskan detail ciri khas dari jenis/motif spesifik tersebut, bukan hanya penjelasan umum
-- Jika tidak bisa mengidentifikasi jenis spesifik dengan pasti, sebutkan beberapa kemungkinan jenis yang mirip
-- Jika bukan objek budaya Indonesia, tetap berikan format JSON dengan informasi bahwa objek tidak dikenali sebagai budaya Indonesia.`;
+- Untuk field "location", HARUS mencantumkan "Indonesia" di akhir (contoh: "Yogyakarta, Indonesia")
+- Jika tidak bisa mengidentifikasi jenis spesifik dengan pasti, gunakan format "Objek Tidak Dikenali" seperti yang dijelaskan di atas.`;
 
     const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
@@ -103,6 +183,73 @@ PENTING:
         unesco: "Tidak Terdaftar",
         image: "",
       };
+    }
+
+    // Validasi apakah ini objek budaya Indonesia yang valid
+    const isValidCulture = scanResult.name !== "Objek Tidak Dikenali" && 
+                          scanResult.accuracy !== "0%" &&
+                          !scanResult.name.toLowerCase().includes("tidak dikenali") &&
+                          !scanResult.name.toLowerCase().includes("tidak dapat") &&
+                          !scanResult.description.toLowerCase().includes("bukan objek budaya") &&
+                          !scanResult.description.toLowerCase().includes("tidak dikenali sebagai budaya") &&
+                          scanResult.location !== "Tidak Diketahui" &&
+                          scanResult.location.toLowerCase().includes("indonesia");
+
+    // Hanya simpan ke database jika objek adalah budaya Indonesia yang valid
+    if (isValidCulture) {
+      try {
+        const objectType = extractObjectType(scanResult.name);
+        const category = getCategoryFromObjectType(objectType);
+        const province = scanResult.location?.split(',')[1]?.trim() || null;
+        
+        // Cek apakah culture dengan nama serupa sudah ada
+        const existingCulture = await prisma.culture.findFirst({
+          where: {
+            OR: [
+              { name: { contains: scanResult.name } },
+              { name: { contains: objectType } }
+            ]
+          }
+        });
+
+        let cultureId = existingCulture?.id;
+
+        // Jika culture belum ada, buat culture baru
+        if (!existingCulture) {
+          const newCulture = await prisma.culture.create({
+            data: {
+              name: scanResult.name,
+              slug: scanResult.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]/g, ''),
+              description: scanResult.description || "Objek budaya Indonesia",
+              category: category as any,
+              location: scanResult.location || "Indonesia",
+              province: province || "Indonesia",
+              city: scanResult.location?.split(',')[0]?.trim() || "",
+              status: 'active',
+              is_endangered: scanResult.rarity === "Sangat Langka",
+              thumbnail: scanResult.image || null,
+            }
+          });
+          cultureId = newCulture.id;
+        }
+
+        // Simpan scan history menggunakan raw query
+        await prisma.$executeRaw`
+          INSERT INTO scan_history (
+            user_id, culture_id, object_name, object_type, category, 
+            location, province, accuracy, description, scan_result, created_at
+          ) VALUES (
+            NULL, ${cultureId}, ${scanResult.name}, ${objectType}, ${category},
+            ${scanResult.location}, ${province}, ${scanResult.accuracy}, 
+            ${scanResult.description}, ${JSON.stringify(scanResult)}, NOW()
+          )
+        `;
+      } catch (dbError) {
+        console.error("Database Error:", dbError);
+        // Tetap return hasil scan meskipun gagal menyimpan ke database
+      }
+    } else {
+      console.log("Objek bukan budaya Indonesia yang valid, tidak disimpan ke database:", scanResult.name);
     }
 
     return NextResponse.json(scanResult);

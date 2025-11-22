@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { use, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import QuizHeader from '@/components/sections/KuisMulai/QuizHeader';
 import QuizProgress from '@/components/sections/KuisMulai/QuizProgress';
 import QuestionCard from '@/components/sections/KuisMulai/QuestionCard';
@@ -12,65 +12,158 @@ import ContinueButton from '@/components/sections/KuisMulai/ContinueButton';
 interface Question {
   id: number;
   question: string;
-  imageUrl: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
+  image_url: string | null;
+  order_number: number;
+  points: number;
+  options: {
+    id: number;
+    option_text: string;
+    order_number: number;
+  }[];
 }
 
-const mockQuizData: Question[] = [
-  {
-    id: 1,
-    question: 'Candi manakah yang reliefnya menceritakan kisah Ramayana dan Krishnayana?',
-    imageUrl: 'https://images.unsplash.com/photo-1591178825729-928ea0a0fe95?w=800&q=80',
-    options: ['Candi Borobudur', 'Candi Prambanan', 'Candi Sewu', 'Candi Plaosan'],
-    correctAnswer: 1,
-    explanation: 'Jawaban yang tepat. Relief Ramayana di Candi Prambanan terpahat pada dinding pagar langkan Candi Siwa dan Candi Brahma, memberikan narasi visual yang luar biasa.'
-  },
-  {
-    id: 2,
-    question: 'Siapakah arsitek yang merancang pembangunan Candi Borobudur?',
-    imageUrl: 'https://images.unsplash.com/photo-1555400082-6e33d2fc4a21?w=800&q=80',
-    options: ['Gunadharma', 'Empu Sindok', 'Mpu Prapanca', 'Rakai Panangkaran'],
-    correctAnswer: 0,
-    explanation: 'Gunadharma adalah arsitek legendaris yang dipercaya merancang Candi Borobudur pada masa Dinasti Syailendra.'
-  }
-];
-
-export default function QuizMulaiPage() {
-  const params = useParams();
+export default function QuizMulaiPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: slug } = use(params);
   const router = useRouter();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  
+  const [attemptId, setAttemptId] = useState<number | null>(null);
+  const [quizTitle, setQuizTitle] = useState('');
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [score, setScore] = useState(200);
-  const [answeredQuestions, setAnsweredQuestions] = useState(3);
-  
-  const quizTitle = 'Kuis Jelajah Candi Nusantara';
-  const totalQuestions = 10;
-  const question = mockQuizData[currentQuestion % mockQuizData.length];
+  const [score, setScore] = useState(0);
+  const [feedbackData, setFeedbackData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [startTime, setStartTime] = useState<number>(Date.now());
 
-  const handleAnswerSelect = (index: number) => {
-    if (showFeedback) return;
-    setSelectedAnswer(index);
-    setShowFeedback(true);
-    
-    if (index === question.correctAnswer) {
-      setScore(prev => prev + 100);
+  useEffect(() => {
+    startQuiz();
+  }, [slug]);
+
+  const startQuiz = async () => {
+    try {
+      setLoading(true);
+      
+      // Get quiz detail first
+      const detailResponse = await fetch(`/api/quizzes/${slug}`);
+      const detailData = await detailResponse.json();
+      
+      if (!detailData.success) {
+        router.push('/kuis');
+        return;
+      }
+      
+      setQuizTitle(detailData.data.title);
+
+      // Start quiz attempt
+      const startResponse = await fetch(`/api/quizzes/${slug}/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: null, // TODO: Get from auth context
+        }),
+      });
+
+      const startData = await startResponse.json();
+
+      if (startData.success) {
+        setAttemptId(startData.data.attemptId);
+        setQuestions(startData.data.questions);
+        setTotalPoints(startData.data.totalPoints);
+        setStartTime(Date.now());
+      } else {
+        router.push('/kuis');
+      }
+    } catch (error) {
+      console.error('Error starting quiz:', error);
+      router.push('/kuis');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleContinue = () => {
-    if (answeredQuestions >= totalQuestions) {
-      router.push(`/kuis/${params.id}/skor`);
+  const handleAnswerSelect = async (optionId: number) => {
+    if (showFeedback || !attemptId) return;
+
+    setSelectedAnswer(optionId);
+
+    try {
+      const response = await fetch(`/api/quizzes/attempts/${attemptId}/answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          questionId: questions[currentQuestionIndex].id,
+          optionId: optionId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFeedbackData(data.data);
+        setScore(data.data.currentScore);
+        setShowFeedback(true);
+      }
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+    }
+  };
+
+  const handleContinue = async () => {
+    if (currentQuestionIndex >= questions.length - 1) {
+      // Quiz selesai, hitung waktu dan redirect ke hasil
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+      
+      try {
+        await fetch(`/api/quizzes/attempts/${attemptId}/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            timeTaken: timeTaken,
+          }),
+        });
+
+        router.push(`/kuis/${slug}/skor?attemptId=${attemptId}`);
+      } catch (error) {
+        console.error('Error completing quiz:', error);
+      }
       return;
     }
 
-    setCurrentQuestion(prev => prev + 1);
+    // Next question
+    setCurrentQuestionIndex(prev => prev + 1);
     setSelectedAnswer(null);
     setShowFeedback(false);
-    setAnsweredQuestions(prev => prev + 1);
+    setFeedbackData(null);
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <div className="w-full max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-[85px]">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/2 mb-8"></div>
+            <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (questions.length === 0) {
+    return null;
+  }
+
+  const currentQuestion = questions[currentQuestionIndex];
 
   return (
     <main className="min-h-screen bg-white">
@@ -80,35 +173,35 @@ export default function QuizMulaiPage() {
         <div className="mt-6 sm:mt-8">
           <QuizProgress 
             score={score}
-            current={answeredQuestions}
-            total={totalQuestions}
+            current={currentQuestionIndex + 1}
+            total={questions.length}
           />
         </div>
 
         <div className="mt-6 sm:mt-8">
           <QuestionCard
-            questionNumber={answeredQuestions}
-            question={question.question}
-            imageUrl={question.imageUrl}
+            questionNumber={currentQuestionIndex + 1}
+            question={currentQuestion.question}
+            imageUrl={currentQuestion.image_url || 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80'}
             instruction="Pilih salah satu jawaban yang paling tepat di bawah ini."
           />
         </div>
 
         <div className="mt-6 sm:mt-8">
           <AnswerOptions
-            options={question.options}
-            selectedAnswer={selectedAnswer}
-            correctAnswer={question.correctAnswer}
+            options={currentQuestion.options.map(opt => opt.option_text)}
+            selectedAnswer={selectedAnswer !== null ? currentQuestion.options.findIndex(opt => opt.id === selectedAnswer) : null}
+            correctAnswer={feedbackData ? currentQuestion.options.findIndex(opt => opt.id === feedbackData.correctOptionId) : null}
             showFeedback={showFeedback}
-            onSelect={handleAnswerSelect}
+            onSelect={(index) => handleAnswerSelect(currentQuestion.options[index].id)}
           />
         </div>
 
-        {showFeedback && (
+        {showFeedback && feedbackData && (
           <div className="mt-6 sm:mt-8">
             <FeedbackCard
-              isCorrect={selectedAnswer === question.correctAnswer}
-              explanation={question.explanation}
+              isCorrect={feedbackData.isCorrect}
+              explanation={feedbackData.explanation || 'Penjelasan tidak tersedia.'}
             />
             
             <div className="flex justify-center mt-6">

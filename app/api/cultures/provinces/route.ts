@@ -8,8 +8,8 @@ export async function GET() {
     // Ambil semua budaya dan hitung per provinsi
     const cultures = await prisma.culture.findMany({
       where: {
-        status: 'published',
-        province: { not: null },
+        status: 'active',
+        province: { not: '' },
       },
       select: {
         province: true,

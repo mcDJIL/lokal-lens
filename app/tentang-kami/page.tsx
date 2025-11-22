@@ -1,3 +1,5 @@
+"use client";
+
 import HeroSection from "@/components/sections/AboutUs/HeroSection";
 import ValuesSection from "@/components/sections/AboutUs/ValuesSection";
 import ChallengeAndSolutionSection from "@/components/sections/AboutUs/ChallengeAndSolutionSection";

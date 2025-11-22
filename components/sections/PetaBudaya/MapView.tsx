@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 // Dynamic import untuk Leaflet (hanya di client-side)
 const LeafletMapComponent = dynamic(
-  () => import('./GoogleMapComponent'),
+  () => import('./LeafletMapComponent'),
   { ssr: false }
 );
 
@@ -128,10 +128,8 @@ const MapView = ({ selectedCategory, selectedProvince }: MapViewProps) => {
           }
 
           setCultures(filteredCultures);
-          // Pilih culture terdekat sebagai default
-          if (filteredCultures.length > 0) {
-            setSelectedCulture(filteredCultures[0]);
-          }
+          // Reset selected culture when filters change
+          setSelectedCulture(null);
         }
       } catch (error) {
         console.error('Error fetching cultures:', error);
@@ -174,6 +172,7 @@ const MapView = ({ selectedCategory, selectedProvince }: MapViewProps) => {
             cultures={filteredCultures}
             onMarkerClick={handleMarkerClick}
             selectedCulture={selectedCulture}
+            onPopupClose={() => setSelectedCulture(null)}
           />
         )}
 

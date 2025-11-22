@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const Footer = () => {
   return (
     <footer className="w-full bg-[#221C10]">
@@ -5,9 +7,7 @@ const Footer = () => {
         <div className="flex flex-col lg:flex-row justify-center items-start gap-8 lg:gap-12 mb-8">
           <div className="w-full lg:w-[280px] flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 2H21V8.66665V15.3334H12V22H3V15.3334V8.66665H12V2Z" fill="#F8F7F5"/>
-              </svg>
+              <Image src="/assets/img/logo-white.png" alt="LokalLens Logo" width={40} height={40} />
               <h2 className="text-lg font-bold leading-7 text-[#F8F7F5]">
                 LokalLens
               </h2>
@@ -24,14 +24,14 @@ const Footer = () => {
                 Navigasi
               </h3>
               <div className="flex flex-col gap-2">
-                <a href="#" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                <a href="/jelajahi" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
                   Jelajahi Budaya
                 </a>
-                <a href="#" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                <a href="/artikel" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
                   Artikel
                 </a>
-                <a href="#" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
-                  Galeri
+                <a href="/event-budaya" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                  Event
                 </a>
               </div>
             </div>
@@ -58,7 +58,7 @@ const Footer = () => {
                 Ikuti Kami
               </h3>
               <div className="flex flex-col gap-2">
-                <a href="#" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/lokallenss?igsh=MWl5bHh5cXhiMjdvag==" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
                   Instagram
                 </a>
                 <a href="#" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">

@@ -6,6 +6,7 @@ import Image from 'next/image';
 interface Quiz {
   id: number;
   title: string;
+  slug: string;
   category: string;
   categoryColor: string;
   difficulty: 'Mudah' | 'Menengah' | 'Sulit';
@@ -113,7 +114,7 @@ const QuizCard = ({ quiz, index }: QuizCardProps) => {
         </p>
 
         <motion.button
-          onClick={() => window.location.href = `/kuis/${quiz.id}/detail`}
+          onClick={() => window.location.href = `/kuis/${quiz.slug}/detail`}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-2xl bg-[#006C84] hover:bg-[#005266] transition-colors"

@@ -11,33 +11,37 @@ datasource db {
 }
 
 model User {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
-  password  String
-  full_name String  @map("full_name")
-  role      Role    @default(user)
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  full_name  String   @map("full_name")
+  role       Role     @default(user)
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
 
-  profile      Profile?
-  certificates Certificate[]
-  user_badges  UserBadge[]
-  user_challenges UserCompleteChallenge[]
-  articles     Article[]
-  comments     ArticleComment[]
-  comment_votes UserCommentVote[]
-  bookmarks    UserArticleBookmark[]
+  profile            Profile?
+  certificates       Certificate[]
+  user_badges        UserBadge[]
+  user_challenges    UserCompleteChallenge[]
+  articles           Article[]
+  comments           ArticleComment[]
+  comment_votes      UserCommentVote[]
+  bookmarks          UserArticleBookmark[]
+  quiz_attempts      QuizAttempt[]
+  endangered_reports EndangeredReport[]      @relation("UserReports")
+  reviewed_reports   EndangeredReport[]      @relation("ReviewedReports")
+  scan_history       ScanHistory[]
 
   @@map("users")
 }
 
 model Profile {
-  id                Int     @id @default(autoincrement())
-  user_id           Int     @unique @map("user_id")
-  bio               String? @db.Text
+  id                Int      @id @default(autoincrement())
+  user_id           Int      @unique @map("user_id")
+  bio               String?  @db.Text
   avatar            String?
-  provinces_visited Int     @default(0) @map("provinces_visited")
-  badges_earned     Int     @default(0) @map("badges_earned")
+  provinces_visited Int      @default(0) @map("provinces_visited")
+  badges_earned     Int      @default(0) @map("badges_earned")
   created_at        DateTime @default(now()) @map("created_at")
   updated_at        DateTime @updatedAt @map("updated_at")
 
@@ -47,12 +51,12 @@ model Profile {
 }
 
 model Certificate {
-  id              Int     @id @default(autoincrement())
-  user_id         Int     @map("user_id")
+  id              Int      @id @default(autoincrement())
+  user_id         Int      @map("user_id")
   title           String
-  description     String? @db.Text
+  description     String?  @db.Text
   date_earned     DateTime @map("date_earned")
-  certificate_url String? @map("certificate_url")
+  certificate_url String?  @map("certificate_url")
   created_at      DateTime @default(now()) @map("created_at")
   updated_at      DateTime @updatedAt @map("updated_at")
 
@@ -69,15 +73,15 @@ enum Role {
 }
 
 model Badge {
-  id          Int      @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   name        String
-  description String   @db.Text
-  icon        String   // URL or icon identifier
+  description String        @db.Text
+  icon        String // URL or icon identifier
   category    BadgeCategory
-  requirement String   @db.Text // Description of how to earn
-  points      Int      @default(0)
-  created_at  DateTime @default(now()) @map("created_at")
-  updated_at  DateTime @updatedAt @map("updated_at")
+  requirement String        @db.Text // Description of how to earn
+  points      Int           @default(0)
+  created_at  DateTime      @default(now()) @map("created_at")
+  updated_at  DateTime      @updatedAt @map("updated_at")
 
   user_badges UserBadge[]
 
@@ -100,15 +104,15 @@ model UserBadge {
 }
 
 model Challenge {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String   @db.Text
-  category    ChallengeCategory
-  difficulty  ChallengeDifficulty
-  points      Int      @default(0)
-  requirements String  @db.Text // JSON or text description
-  created_at  DateTime @default(now()) @map("created_at")
-  updated_at  DateTime @updatedAt @map("updated_at")
+  id           Int                 @id @default(autoincrement())
+  title        String
+  description  String              @db.Text
+  category     ChallengeCategory
+  difficulty   ChallengeDifficulty
+  points       Int                 @default(0)
+  requirements String              @db.Text // JSON or text description
+  created_at   DateTime            @default(now()) @map("created_at")
+  updated_at   DateTime            @updatedAt @map("updated_at")
 
   user_challenges UserCompleteChallenge[]
 
@@ -153,25 +157,25 @@ enum ChallengeDifficulty {
 }
 
 model Article {
-  id              Int      @id @default(autoincrement())
-  title           String
-  slug            String   @unique
-  excerpt         String   @db.Text
-  content         String   @db.LongText
-  featured_image  String
-  author_id       Int      @map("author_id")
-  category        String
-  tags            String?  @db.Text // JSON array of tags
-  province        String?  // Related province
-  read_time       Int      @default(5) @map("read_time") // in minutes
-  views           Int      @default(0)
-  is_highlight    Boolean  @default(false) @map("is_highlight")
-  published_at    DateTime @default(now()) @map("published_at")
-  created_at      DateTime @default(now()) @map("created_at")
-  updated_at      DateTime @updatedAt @map("updated_at")
+  id             Int      @id @default(autoincrement())
+  title          String
+  slug           String   @unique
+  excerpt        String   @db.Text
+  content        String   @db.LongText
+  featured_image String
+  author_id      Int      @map("author_id")
+  category       String
+  tags           String?  @db.Text // JSON array of tags
+  province       String? // Related province
+  read_time      Int      @default(5) @map("read_time") // in minutes
+  views          Int      @default(0)
+  is_highlight   Boolean  @default(false) @map("is_highlight")
+  published_at   DateTime @default(now()) @map("published_at")
+  created_at     DateTime @default(now()) @map("created_at")
+  updated_at     DateTime @updatedAt @map("updated_at")
 
-  author   User              @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  comments ArticleComment[]
+  author    User                  @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  comments  ArticleComment[]
   bookmarks UserArticleBookmark[]
 
   @@index([slug])
@@ -191,10 +195,10 @@ model ArticleComment {
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
 
-  article Article             @relation(fields: [article_id], references: [id], onDelete: Cascade)
-  user    User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  parent  ArticleComment?     @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
-  replies ArticleComment[]    @relation("CommentReplies")
+  article Article           @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent  ArticleComment?   @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies ArticleComment[]  @relation("CommentReplies")
   votes   UserCommentVote[]
 
   @@index([article_id])
@@ -233,27 +237,28 @@ model UserArticleBookmark {
 }
 
 model Culture {
-  id             Int      @id @default(autoincrement())
-  name           String
-  slug           String   @unique
-  subtitle       String?  // e.g., "Tarian Mistis dari Gerbang Timur Jawa"
-  description    String   @db.Text
-  long_description String? @db.Text
-  meaning        String?  @db.Text // Makna dan Filosofi
-  category       CultureCategory? // Kategori budaya
-  location       String   // e.g., "Ponorogo, Jawa Timur"
-  province       String   // e.g., "Jawa Timur"
-  city           String   // e.g., "Ponorogo"
-  latitude       Float?   // For map and nearby cultures
-  longitude      Float?   // For map and nearby cultures
-  status         CultureStatus @default(active)
-  is_endangered  Boolean  @default(false) // Terancam Punah
-  thumbnail      String?  // Main image URL
-  map_embed_url  String?  @db.Text // Google Maps embed URL
-  created_at     DateTime @default(now()) @map("created_at")
-  updated_at     DateTime @updatedAt @map("updated_at")
+  id               Int              @id @default(autoincrement())
+  name             String
+  slug             String           @unique
+  subtitle         String? // e.g., "Tarian Mistis dari Gerbang Timur Jawa"
+  description      String           @db.Text
+  long_description String?          @db.Text
+  meaning          String?          @db.Text // Makna dan Filosofi
+  category         CultureCategory? // Kategori budaya
+  location         String // e.g., "Ponorogo, Jawa Timur"
+  province         String // e.g., "Jawa Timur"
+  city             String // e.g., "Ponorogo"
+  latitude         Float? // For map and nearby cultures
+  longitude        Float? // For map and nearby cultures
+  status           CultureStatus    @default(active)
+  is_endangered    Boolean          @default(false) // Terancam Punah
+  thumbnail        String? // Main image URL
+  map_embed_url    String?          @db.Text // Google Maps embed URL
+  created_at       DateTime         @default(now()) @map("created_at")
+  updated_at       DateTime         @updatedAt @map("updated_at")
 
-  images CultureImage[]
+  images       CultureImage[]
+  scan_history ScanHistory[]
 
   @@index([province])
   @@index([city])
@@ -263,13 +268,13 @@ model Culture {
 }
 
 model CultureImage {
-  id          Int      @id @default(autoincrement())
-  culture_id  Int      @map("culture_id")
-  image_url   String
-  alt_text    String?
-  is_primary  Boolean  @default(false)
-  display_order Int    @default(0) @map("display_order")
-  created_at  DateTime @default(now()) @map("created_at")
+  id            Int      @id @default(autoincrement())
+  culture_id    Int      @map("culture_id")
+  image_url     String
+  alt_text      String?
+  is_primary    Boolean  @default(false)
+  display_order Int      @default(0) @map("display_order")
+  created_at    DateTime @default(now()) @map("created_at")
 
   culture Culture @relation(fields: [culture_id], references: [id], onDelete: Cascade)
 
@@ -284,14 +289,281 @@ enum CultureStatus {
 }
 
 enum CultureCategory {
-  tarian        // Tarian tradisional
-  musik         // Musik & alat musik tradisional
-  pakaian       // Pakaian adat
-  arsitektur    // Rumah adat & bangunan
-  kuliner       // Makanan & minuman tradisional
-  upacara       // Upacara adat
-  kerajinan     // Kerajinan tangan
-  senjata       // Senjata tradisional
-  permainan     // Permainan tradisional
-  bahasa        // Bahasa & aksara daerah
+  tarian // Tarian tradisional
+  musik // Musik & alat musik tradisional
+  pakaian // Pakaian adat
+  arsitektur // Rumah adat & bangunan
+  kuliner // Makanan & minuman tradisional
+  upacara // Upacara adat
+  kerajinan // Kerajinan tangan
+  senjata // Senjata tradisional
+  permainan // Permainan tradisional
+  bahasa // Bahasa & aksara daerah
+}
+
+// ============= QUIZ MODELS =============
+
+model Quiz {
+  id              Int            @id @default(autoincrement())
+  title           String
+  slug            String         @unique
+  description     String?        @db.Text
+  thumbnail       String?
+  category        String? // e.g., "Candi", "Tarian", "Kuliner"
+  difficulty      QuizDifficulty @default(medium)
+  time_limit      Int? // in minutes, null = no limit
+  total_questions Int            @default(0)
+  status          QuizStatus     @default(draft)
+  created_at      DateTime       @default(now()) @map("created_at")
+  updated_at      DateTime       @updatedAt @map("updated_at")
+
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([category])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id           Int      @id @default(autoincrement())
+  quiz_id      Int      @map("quiz_id")
+  question     String   @db.Text
+  image_url    String?
+  explanation  String?  @db.Text
+  order_number Int      @map("order_number")
+  points       Int      @default(100)
+  created_at   DateTime @default(now()) @map("created_at")
+  updated_at   DateTime @updatedAt @map("updated_at")
+
+  quiz    Quiz         @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+  options QuizOption[]
+  answers QuizAnswer[]
+
+  @@index([quiz_id])
+  @@index([order_number])
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id           Int      @id @default(autoincrement())
+  question_id  Int      @map("question_id")
+  option_text  String   @db.Text
+  is_correct   Boolean  @default(false)
+  order_number Int      @map("order_number")
+  created_at   DateTime @default(now()) @map("created_at")
+
+  question     QuizQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user_answers QuizAnswer[]
+
+  @@index([question_id])
+  @@map("quiz_options")
+}
+
+model QuizAttempt {
+  id              Int       @id @default(autoincrement())
+  quiz_id         Int       @map("quiz_id")
+  user_id         Int?      @map("user_id") // nullable for guest users
+  score           Int       @default(0)
+  total_points    Int       @default(0) @map("total_points")
+  correct_answers Int       @default(0) @map("correct_answers")
+  wrong_answers   Int       @default(0) @map("wrong_answers")
+  percentage      Float     @default(0)
+  time_taken      Int?      @map("time_taken") // in seconds
+  completed_at    DateTime? @map("completed_at")
+  created_at      DateTime  @default(now()) @map("created_at")
+
+  quiz    Quiz         @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+  user    User?        @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  answers QuizAnswer[]
+
+  @@index([quiz_id])
+  @@index([user_id])
+  @@index([completed_at])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id          Int      @id @default(autoincrement())
+  attempt_id  Int      @map("attempt_id")
+  question_id Int      @map("question_id")
+  option_id   Int      @map("option_id")
+  is_correct  Boolean  @default(false)
+  answered_at DateTime @default(now()) @map("answered_at")
+
+  attempt  QuizAttempt  @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+  question QuizQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  option   QuizOption   @relation(fields: [option_id], references: [id], onDelete: Cascade)
+
+  @@index([attempt_id])
+  @@index([question_id])
+  @@map("quiz_answers")
+}
+
+enum QuizStatus {
+  draft
+  published
+  archived
+}
+
+enum QuizDifficulty {
+  easy
+  medium
+  hard
+}
+
+// ============= EVENT MODELS =============
+
+model Event {
+  id                Int         @id @default(autoincrement())
+  title             String
+  slug              String      @unique
+  description       String      @db.Text
+  long_description  String?     @db.Text
+  thumbnail         String? // Main event image
+  date_start        DateTime    @map("date_start")
+  date_end          DateTime    @map("date_end")
+  time_start        String?     @map("time_start") // e.g., "10:00"
+  time_end          String?     @map("time_end") // e.g., "22:00"
+  location_name     String      @map("location_name") // e.g., "Plaza Tenggara, Gelora Bung Karno"
+  location_city     String      @map("location_city") // e.g., "Jakarta Pusat"
+  location_province String      @map("location_province") // e.g., "DKI Jakarta"
+  location_address  String?     @map("location_address") @db.Text
+  latitude          Float?
+  longitude         Float?
+  map_embed_url     String?     @map("map_embed_url") @db.Text
+  price             Int? // null = free event
+  status            EventStatus @default(available)
+  category          String? // e.g., "Festival", "Pameran", "Pertunjukan"
+  organizer         String? // Event organizer name
+  contact_email     String?     @map("contact_email")
+  contact_phone     String?     @map("contact_phone")
+  website_url       String?     @map("website_url")
+  views             Int         @default(0)
+  created_at        DateTime    @default(now()) @map("created_at")
+  updated_at        DateTime    @updatedAt @map("updated_at")
+
+  performers EventPerformer[]
+  galleries  EventGallery[]
+
+  @@index([slug])
+  @@index([date_start])
+  @@index([status])
+  @@index([location_province])
+  @@map("events")
+}
+
+model EventPerformer {
+  id           Int      @id @default(autoincrement())
+  event_id     Int      @map("event_id")
+  name         String
+  title        String // e.g., "Maestro Tari Kontemporer"
+  description  String   @db.Text
+  image_url    String?  @map("image_url")
+  order_number Int      @default(0) @map("order_number")
+  created_at   DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@index([event_id])
+  @@map("event_performers")
+}
+
+model EventGallery {
+  id           Int      @id @default(autoincrement())
+  event_id     Int      @map("event_id")
+  image_url    String   @map("image_url")
+  alt_text     String   @map("alt_text")
+  order_number Int      @default(0) @map("order_number")
+  created_at   DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@index([event_id])
+  @@map("event_galleries")
+}
+
+enum EventStatus {
+  available // Tiket tersedia
+  sold_out // Tiket habis
+  free // Gratis
+  cancelled // Dibatalkan
+  completed // Sudah selesai
+}
+
+// ============= ENDANGERED CULTURE REPORT MODELS =============
+
+model EndangeredReport {
+  id             Int          @id @default(autoincrement())
+  culture_name   String       @map("culture_name")
+  threat_type    String       @map("threat_type") // Jenis Ancaman
+  description    String       @db.Text
+  location       String // Lokasi lengkap
+  province       String? // Provinsi
+  city           String? // Kota
+  image_url      String?      @map("image_url") // Bukti foto/video
+  reporter_name  String?      @map("reporter_name") // Nama pelapor (opsional)
+  reporter_email String?      @map("reporter_email") // Email pelapor (opsional)
+  is_anonymous   Boolean      @default(false) @map("is_anonymous")
+  user_id        Int?         @map("user_id") // ID user jika login
+  status         ReportStatus @default(pending)
+  admin_notes    String?      @map("admin_notes") @db.Text // Catatan dari admin
+  reviewed_at    DateTime?    @map("reviewed_at")
+  reviewed_by    Int?         @map("reviewed_by") // Admin ID yang review
+  created_at     DateTime     @default(now()) @map("created_at")
+  updated_at     DateTime     @updatedAt @map("updated_at")
+
+  user     User? @relation("UserReports", fields: [user_id], references: [id], onDelete: SetNull)
+  reviewer User? @relation("ReviewedReports", fields: [reviewed_by], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([user_id])
+  @@index([province])
+  @@index([created_at])
+  @@map("endangered_reports")
+}
+
+enum ReportStatus {
+  pending // Menunggu review
+  approved // Disetujui
+  rejected // Ditolak
+}
+
+enum ThreatType {
+  modernization // Modernisasi
+  lack_of_interest // Kurangnya Minat
+  urbanization // Urbanisasi
+  natural_disaster // Bencana Alam
+  conflict // Konflik
+  economic_pressure // Tekanan Ekonomi
+  other // Lainnya
+}
+
+// ============= SCAN HISTORY MODELS =============
+
+model ScanHistory {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?     @map("user_id") // nullable untuk guest user
+  culture_id  Int?     @map("culture_id") // reference ke culture jika sudah ada di database
+  object_name String   @map("object_name") // Nama objek yang di-scan (contoh: Batik Parang Rusak)
+  object_type String   @map("object_type") // Tipe objek (batik, wayang, keris, tarian, makanan, dll)
+  category    String? // Kategori lebih spesifik
+  location    String? // Lokasi asal objek
+  province    String? // Provinsi
+  accuracy    String? // Persentage akurasi (contoh: "92%")
+  description String?  @db.Text // Deskripsi hasil scan
+  image_data  String?  @db.LongText // Base64 image data yang di-scan (opsional)
+  scan_result String?  @db.Text // JSON full result dari Gemini AI
+  created_at  DateTime @default(now()) @map("created_at")
+
+  user    User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  culture Culture? @relation(fields: [culture_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([culture_id])
+  @@index([object_type])
+  @@index([province])
+  @@index([created_at])
+  @@map("scan_history")
 }

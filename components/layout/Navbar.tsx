@@ -65,7 +65,8 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
         <div className="flex items-center justify-between min-h-[56px]">
           {/* Logo */}
           <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
-            <a href="/" className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold leading-tight tracking-[-0.27px] text-[#111813] whitespace-nowrap">
+            <a href="/" className="flex gap-1.5 items-center text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold leading-tight tracking-[-0.27px] text-[#111813] whitespace-nowrap">
+              <Image src="/assets/img/logo.png" alt="LokalLens Logo" width={40} height={40} />
               LokalLens
             </a>
             
