@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HeroSection from "@/components/sections/Artikel/HeroSection";
 import SearchSection from "@/components/sections/Artikel/SearchSection";
@@ -53,11 +53,6 @@ export default function ArtikelPage() {
   }, [searchParams, router]);
 
   return (
-    <Suspense fallback={
-      <div className="w-full bg-white min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C1A36F]"></div>
-      </div>
-    }>
       <main className="w-full bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <HeroSection />
@@ -78,6 +73,5 @@ export default function ArtikelPage() {
           />
         </div>
       </main>
-    </Suspense>
   );
 }
