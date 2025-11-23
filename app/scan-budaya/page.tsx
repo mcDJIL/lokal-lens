@@ -102,10 +102,7 @@ export default function ScanBudayaPage() {
               className="mb-8"
               >
               <button
-                onClick={() => {
-                handleBackToScanner();
-                setScanResult(null);
-                }}
+                onClick={handleBackToScanner}
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
