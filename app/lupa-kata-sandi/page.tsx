@@ -6,11 +6,38 @@ import Link from 'next/link';
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Password reset request for:', email);
-    setSubmitted(true);
+    setError('');
+    setSubmitted(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        // If email not found, show friendly message. For production reset flows
+        // consider returning 200 regardless to avoid user enumeration.
+        setError(data.error || 'Email tidak ditemukan.');
+        return;
+      }
+
+      setSubmitted(true);
+    }catch (err) {
+      setError('Pengiriman tautan reset gagal. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,8 +77,16 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
+                {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
+
+
                 <button
                   type="submit"
+                  disabled = {loading}
                   className="w-full rounded-full bg-[#A94438] px-5 py-3 text-center text-base font-bold leading-6 tracking-[0.24px] text-white transition-colors hover:bg-[#8B3529] focus:outline-none focus:ring-2 focus:ring-[#A94438] focus:ring-offset-2"
                 >
                   Kirim Tautan Reset

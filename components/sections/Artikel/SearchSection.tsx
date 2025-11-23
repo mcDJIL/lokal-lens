@@ -69,8 +69,27 @@ const SearchSection = ({ currentCategory, currentSearch, onCategoryChange, onSea
               placeholder="Cari artikel berdasarkan kata kunci..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                // Trigger immediate search on Enter
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (searchQuery !== currentSearch) onSearchChange(searchQuery);
+                }
+              }}
               className="flex-1 bg-transparent outline-none text-[#616F89] font-noto text-sm sm:text-base placeholder:text-[#616F89]"
             />
+            {searchQuery && (
+              <button
+                aria-label="Clear search"
+                onClick={() => {
+                  setSearchQuery('');
+                  if (currentSearch !== '') onSearchChange('');
+                }}
+                className="ml-2 text-sm text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            )}
           </div>
         </div>
 
