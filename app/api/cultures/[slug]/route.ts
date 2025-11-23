@@ -95,7 +95,7 @@ export async function GET(
         where: {
           id: { not: culture.id },
           province: culture.province,
-          status: 'active',
+          status: 'published',
         },
         include: {
           images: {
