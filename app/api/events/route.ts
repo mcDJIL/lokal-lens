@@ -51,6 +51,14 @@ export async function GET(request: NextRequest) {
         gte: startDate,
         lte: endDate,
       };
+    } else {
+      // Jika tidak ada filter bulan, hanya tampilkan event yang upcoming (belum lewat)
+      // Event dianggap belum lewat jika date_end >= hari ini
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set ke awal hari
+      where.date_end = {
+        gte: today,
+      };
     }
 
     // Fetch events with pagination

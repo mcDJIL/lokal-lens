@@ -121,10 +121,19 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
                            (id === 'month' && filters.month) ||
                            (id === 'category' && filters.category);
 
+    console.log(`FilterButton ${id} - isOpen:`, isOpen, 'openDropdown:', openDropdown);
+
     return (
       <div className="relative">
         <button
-          onClick={() => setOpenDropdown(isOpen ? null : id)}
+          id={`btn-${id}`}
+          type="button"
+          onClick={() => {
+            console.log('Clicked button:', id);
+            console.log('Current openDropdown:', openDropdown);
+            console.log('Will set to:', isOpen ? null : id);
+            setOpenDropdown(isOpen ? null : id);
+          }}
           className={`flex items-center gap-2 px-4 py-2.5 bg-white border rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
             hasActiveFilter 
               ? 'border-[#D4A017] bg-[#FFF9F0] text-[#D4A017]'
@@ -145,10 +154,14 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 mt-2 bg-white border border-[#EAE3D9] rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
+          <div 
+            className="absolute top-full left-0 mt-2 bg-white border border-[#EAE3D9] rounded-lg shadow-xl z-[9999] min-w-[200px] max-w-[280px] max-h-[320px] overflow-y-auto"
+            style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
+          >
             {id === 'category' ? (
               <>
                 <button
+                  type="button"
                   onClick={() => {
                     onSelect('');
                     setOpenDropdown(null);
@@ -159,6 +172,7 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
                 </button>
                 {categories.map((cat) => (
                   <button
+                    type="button"
                     key={cat.id}
                     onClick={() => {
                       onSelect(cat.slug);
@@ -174,6 +188,7 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
             ) : Array.isArray(options) && typeof options[0] === 'string' ? (
               (options as string[]).map((option) => (
                 <button
+                  type="button"
                   key={option}
                   onClick={() => {
                     const value = option.includes('Semua') ? '' : option;
@@ -188,6 +203,7 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
             ) : (
               (options as { label: string; value: string }[]).map((option) => (
                 <button
+                  type="button"
                   key={option.value}
                   onClick={() => {
                     onSelect(option.value);
@@ -206,9 +222,9 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
   };
 
   return (
-    <div ref={dropdownRef} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
       {/* Filter Buttons */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide">
+      <div ref={dropdownRef} className="flex items-center gap-3 pb-2 sm:pb-0 w-full sm:w-auto" style={{ overflow: 'visible' }}>
         <FilterButton 
           id="province" 
           options={provinces}
