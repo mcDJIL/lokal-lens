@@ -189,10 +189,10 @@ const ProvinceCollectionSection = () => {
                 <motion.a
                   whileHover={{ x: 5 }}
                   transition={{ duration: 0.2 }}
-                  href={`/jelajahi?province=${encodeURIComponent(province.name)}`}
+                  href={`/jelajahi`}
                   className="flex items-center gap-2 text-sm font-bold leading-5 text-[#00A99D] hover:text-[#008f85] transition-colors group"
                 >
-                  <span>Jelajahi Sekarang</span>
+                  <span>Jelajahi</span>
                   <motion.svg 
                     whileHover={{ x: 3 }}
                     width="25" height="28" viewBox="0 0 25 28" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-7"

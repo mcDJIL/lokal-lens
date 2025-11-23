@@ -30,6 +30,12 @@ const Footer = () => {
                 <a href="/artikel" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
                   Artikel
                 </a>
+                <a href="/peta-budaya" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                  Peta Budaya
+                </a>
+                <a href="/kuis" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                  Kuis Budaya
+                </a>
                 <a href="/event-budaya" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
                   Event
                 </a>
@@ -58,7 +64,7 @@ const Footer = () => {
                 Ikuti Kami
               </h3>
               <div className="flex flex-col gap-2">
-                <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/lokallenss?igsh=MWl5bHh5cXhiMjdvag==" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
+                <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/lokallens_id/" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">
                   Instagram
                 </a>
                 <a href="#" className="text-sm font-normal leading-5 text-[#A19886] hover:text-[#F8F7F5] transition-colors">

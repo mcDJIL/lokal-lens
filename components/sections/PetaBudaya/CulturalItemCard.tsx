@@ -69,7 +69,7 @@ const CulturalItemCard = ({ onClose, culture }: CulturalItemCardProps) => {
       transition={{ duration: 0.3 }}
       className="w-full sm:w-60 lg:w-[239px] rounded-[20px] bg-white shadow-lg overflow-hidden"
     >
-      <div className="relative h-32 overflow-hidden rounded-t-[32px]">
+      <div className="relative h-32 overflow-hidden rounded-t-[20px]">
         <img
           src={displayImage}
           alt={culture.name}

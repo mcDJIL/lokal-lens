@@ -3,6 +3,9 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 interface User {
   id: number;
@@ -52,11 +55,21 @@ export default function ArticleDiscussion({ article }: ArticleDiscussionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyToId, setReplyToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!commentText.trim() || isSubmitting) return;
+
+    // If user is not logged in, show login modal
+    if (!isLoading && !user) {
+      setShowLoginModal(true);
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -78,7 +91,8 @@ export default function ArticleDiscussion({ article }: ArticleDiscussionProps) {
         setCommentCount(commentCount + 1);
         setCommentText('');
       } else if (response.status === 401) {
-        alert('Anda harus login untuk mengirim komentar');
+        // Server says unauthenticated — show login modal
+        setShowLoginModal(true);
       } else {
         alert('Gagal mengirim komentar. Silakan coba lagi.');
       }
@@ -94,6 +108,13 @@ export default function ArticleDiscussion({ article }: ArticleDiscussionProps) {
     if (!replyText.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
+
+    // If user is not logged in, show login modal
+    if (!isLoading && !user) {
+      setIsSubmitting(false);
+      setShowLoginModal(true);
+      return;
+    }
 
     try {
       const response = await fetch('/api/articles/comments', {
@@ -124,7 +145,7 @@ export default function ArticleDiscussion({ article }: ArticleDiscussionProps) {
         setReplyText('');
         setReplyToId(null);
       } else if (response.status === 401) {
-        alert('Anda harus login untuk mengirim balasan');
+        setShowLoginModal(true);
       } else {
         alert('Gagal mengirim balasan. Silakan coba lagi.');
       }
@@ -315,6 +336,21 @@ export default function ArticleDiscussion({ article }: ArticleDiscussionProps) {
           </span>
         </motion.button>
       </motion.form>
+      {/* Login required modal */}
+      <ConfirmDialog
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onConfirm={() => {
+          const next = typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '/artikel';
+          router.push(`/masuk?next=${next}`);
+        }}
+        title="Perlu Login"
+        message="Anda harus login untuk mengirim komentar atau balasan."
+        confirmText="Login"
+        cancelText="Batal"
+        type="info"
+        loading={false}
+      />
     </section>
   );
 }
