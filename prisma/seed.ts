@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, $Enums } from '@prisma/client';
 import { hashPassword } from '../lib/auth/utils';
 import { seedEndangeredReports } from './seeds/endangered_reports';
 
@@ -65,7 +65,7 @@ async function main() {
       email: 'admin@gmail.com',
       password: adminPassword,
       full_name: 'Admin Lokal Lens',
-      role: 'admin',
+      role: $Enums.Role.admin,
       profile: {
         create: {
           bio: 'Administrator platform Lokal Lens',
@@ -91,7 +91,7 @@ async function main() {
       email: 'contributor@gmail.com',
       password: contributorPassword,
       full_name: 'Budi Kontributor',
-      role: 'contributor',
+      role: $Enums.Role.contributor,
       profile: {
         create: {
           bio: 'Kontributor aktif di platform Lokal Lens',
@@ -117,7 +117,7 @@ async function main() {
       email: 'officer@gmail.com',
       password: officerPassword,
       full_name: 'Petugas Budaya',
-      role: 'officer',
+      role: $Enums.Role.petugas,
       profile: {
         create: {
           bio: 'Petugas pemeliharaan budaya',
@@ -143,7 +143,7 @@ async function main() {
       email: 'user@gmail.com',
       password: userPassword,
       full_name: 'User Biasa',
-      role: 'user',
+      role: $Enums.Role.user,
       profile: {
         create: {
           bio: 'Pengguna biasa platform Lokal Lens',
