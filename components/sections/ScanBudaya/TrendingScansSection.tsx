@@ -117,8 +117,8 @@ const TrendingScansSection = () => {
                         <span className="text-gray-400">No Image</span>
                       </div>
                     )}
-                    <div className="absolute bottom-2 left-3">
-                      <h4 className="text-base sm:text-lg font-bold leading-7 text-white drop-shadow-lg">
+                    <div className="absolute bottom-2 left-3 line-clamp-1">
+                      <h4 className="text-base sm:text-lg font-bold leading-7 text-white drop-shadow-lg line-clamp-1">
                         {item.title}
                       </h4>
                     </div>

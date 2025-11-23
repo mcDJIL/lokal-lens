@@ -117,13 +117,13 @@ CONTOH ANALISIS YANG BENAR:
 Berikan informasi dalam format JSON berikut (WAJIB menggunakan format ini):
 
 {
-  "name": "Nama SPESIFIK objek budaya dengan jenis/motif/varian yang jelas",
+  "name": "Nama SPESIFIK objek budaya dengan jenis/motif/varian yang jelas NOTE TOLONG NAMANYA JANGAN TERLALU PANJANG SINGKAT SAJA TAPI MEWAKILI BIAR DESCRIPTION YANG LEBIH DETAIL",
   "location": "Daerah/Provinsi asal spesifik, Indonesia",
   "accuracy": "Persentase akurasi (contoh: 92%)",
   "description": "Deskripsi detail tentang objek budaya ini, termasuk ciri khas, makna filosofis, dan keunikan dari jenis/motif spesifik ini (minimal 3-4 kalimat yang informatif)",
   "rarity": "Sangat Langka / Langka / Umum",
   "unesco": "Terdaftar / Tidak Terdaftar",
-  "image": "Gambar referensi objek budaya ini dalam format URL string"
+  "image": "Gambar referensi objek budaya ini dalam format URL string, TOLONG GAMBAR REFERENSI JANGAN SAMPAI NOT FOUND"
 }
 
 PENTING: 

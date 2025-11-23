@@ -407,24 +407,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
                   {/* Add to Calendar */}
                   <div className="space-y-3">
                     <h3 className="text-base font-bold text-[#333] text-center">
-                      Add to Calendar
+                      Tambah ke Kalender
                     </h3>
                     <div className="flex gap-3">
                       <button 
                         onClick={addToGoogleCalendar}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
                       >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm3.5 13.5h-7v-7h7v7z"
-                            fill="#4285F4"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+                          <rect x="1" y="2" width="18" height="16" rx="2" fill="#4285F4"/>
+                          <rect x="1" y="2" width="18" height="5" rx="2" fill="#4285F4"/>
+                          <rect x="2" y="6.5" width="16" height="9.5" rx="1" fill="#FFFFFF"/>
+                          <rect x="4.2" y="1.2" width="2.2" height="2.2" rx="0.6" fill="#FFFFFF"/>
+                          <rect x="13.6" y="1.2" width="2.2" height="2.2" rx="0.6" fill="#FFFFFF"/>
+                          <text x="10" y="13.3" textAnchor="middle" fontFamily="Segoe UI, Roboto, Arial, sans-serif" fontSize="6" fontWeight="700" fill="#1F2937">31</text>
                         </svg>
                         <span className="text-sm font-bold text-[#333]">Google</span>
                       </button>
@@ -432,17 +428,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
                         onClick={addToOutlookCalendar}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
                       >
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"
-                            fill="#0078D4"
-                          />
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+                          <rect x="0.5" y="0.5" width="19" height="19" rx="3" fill="#0078D4"/>
+                          <path d="M3.5 6.5h13v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7z" fill="#FFFFFF"/>
+                          <path d="M3.5 6.5l6.5 4.5 6.5-4.5" fill="#E6F2FF"/>
+                          <rect x="12.5" y="2.5" width="4" height="3.2" rx="0.6" fill="#005A9E"/>
+                          <text x="14.5" y="4.6" textAnchor="middle" fontFamily="Segoe UI, Roboto, Arial, sans-serif" fontSize="2.2" fontWeight="600" fill="#FFFFFF">O</text>
                         </svg>
                         <span className="text-sm font-bold text-[#333]">Outlook</span>
                       </button>
@@ -452,7 +443,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
                   {/* Share Event */}
                   <div className="space-y-3">
                     <h3 className="text-base font-bold text-[#333] text-center">
-                      Share Event
+                      Bagikan Event
                     </h3>
                     <div className="flex items-center justify-center gap-3">
                       <button 

@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Event {
   id: number;
+  slug: string;
   title: string;
   date: string;
   location: string;
@@ -212,7 +214,7 @@ const CalendarView = ({ events }: CalendarViewProps) => {
           {selectedDateEvents.length > 0 ? (
             <div className="space-y-4">
               {selectedDateEvents.map((event) => (
-                <div
+                <div 
                   key={event.id}
                   className="border border-[#E5E7EB] rounded-xl overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
                 >
@@ -251,9 +253,10 @@ const CalendarView = ({ events }: CalendarViewProps) => {
                       </svg>
                       <span>{event.location}</span>
                     </div>
-                    {event.price && (
-                      <p className="text-sm font-bold text-[#D4A017]">{event.price}</p>
-                    )}
+                    <div className="flex justify-between items-center gap-1">
+                      <p className="text-sm font-bold text-[#D4A017]">{event?.price ?? 'Gratis'}</p>
+                      <Link href={`/event-budaya/${event.slug}`} className='flex items-center gap-2 px-4 py-1 rounded-full border transition-all duration-300 border-[#D4A017] text-[#D4A017] hover:bg-[#D4A017] hover:text-white hover:shadow-md'>Detail</Link>
+                    </div>
                   </div>
                 </div>
               ))}

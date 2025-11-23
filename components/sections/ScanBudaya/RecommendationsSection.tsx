@@ -121,7 +121,7 @@ const RecommendationsSection = ({ scanResult }: RecommendationsSectionProps) => 
             <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 line-clamp-1">
             {displayRecommendations.map((item, index) => (
               <Link href={item.link} key={index}>
                 <motion.div 
@@ -145,7 +145,7 @@ const RecommendationsSection = ({ scanResult }: RecommendationsSectionProps) => 
                       </div>
                     )}
                   </div>
-                  <div className="p-3 sm:p-4 space-y-1">
+                  <div className="p-3 sm:p-4 space-y-1 line-clamp-1">
                     <motion.div 
                       className="text-xs font-bold leading-4 tracking-[0.6px] uppercase" 
                       style={{ color: item.categoryColor }}
@@ -153,7 +153,10 @@ const RecommendationsSection = ({ scanResult }: RecommendationsSectionProps) => 
                     >
                       {item.type}
                     </motion.div>
-                    <h4 className="text-sm sm:text-base font-bold leading-6 text-[#1A1A1A] line-clamp-3">
+                    <h4
+                      className="text-sm sm:text-base font-bold leading-6 text-[#1A1A1A] truncate"
+                      title={item.title}
+                    >
                       {item.title}
                     </h4>
                   </div>
