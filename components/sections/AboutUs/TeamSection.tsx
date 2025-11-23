@@ -6,28 +6,28 @@ const TeamSection = () => {
   const teamMembers = [
     {
       name: "Moch Djauharil Ilmi",
-      role: "Fullstack Developer",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/a5f76c737a7156a1e577fdc66b1c7064e058cf7c?width=432"
+      role: "Team Leader",
+      image: "/assets/img/team/areal.jpeg"
     },
     {
       name: "Khairunnisa",
-      role: "Cultural Researcher",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/d7c397c28a8e7ff1dc58cc6e2b19f2383f03438f?width=432"
+      role: "UI/UX Designer",
+      image: "/assets/img/team/aca.jpeg"
     },
     {
       name: "Djenar Virgiant Sayyid Nasrullah",
-      role: "UI/UX Designer",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/1c88cbea6107b27cce2d7b79790b3ca7704dcf9e?width=432"
+      role: "Front End Developer",
+      image: "/assets/img/team/virgi.jpeg"
     },
     {
       name: "Fieza Rausyan Al Ghifari",
-      role: "Frontend Developer",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/feb9564f8d4c95a5edb2ee5f1cdd281556d48bcb?width=432"
+      role: "Full Stack Developer",
+      image: "/assets/img/team/f.jpeg"
     },
     {
       name: "Muhammad Dio Rizqi Hermawan",
       role: "Backend Developer",
-      image: "https://api.builder.io/api/v1/image/assets/TEMP/feb9564f8d4c95a5edb2ee5f1cdd281556d48bcb?width=432"
+      image: "/assets/img/team/dyo.jpeg"
     }
   ];
 
@@ -110,7 +110,7 @@ const TeamSection = () => {
                 <img 
                   src={member.image}
                   alt={member.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-top object-cover"
                 />
               </motion.div>
               <motion.h3 

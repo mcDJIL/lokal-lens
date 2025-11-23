@@ -2,8 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 interface Event {
   id: number;
@@ -20,15 +28,13 @@ interface Event {
 }
 
 const EventsSection = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events?limit=8');
+        const response = await fetch('/api/events?limit=6');
         const data = await response.json();
         if (data.success) {
           setEvents(data.data);
@@ -43,23 +49,9 @@ const EventsSection = () => {
     fetchEvents();
   }, []);
 
-  const slidesCount = events.length;
-  const itemsPerView = 5;
-  const maxSlide = Math.max(0, slidesCount - itemsPerView);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => Math.min(prev + 1, maxSlide));
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => Math.max(prev - 1, 0));
-  };
-
   const formatDate = (date?: string, startDate?: string, endDate?: string) => {
-    // If already formatted from API
     if (date) return date;
     
-    // If we have start and end dates
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -127,26 +119,44 @@ const EventsSection = () => {
           </p>
         </motion.div>
 
-        <div className="relative w-full">
-          {/* Swiper Container */}
-          <div className="overflow-hidden">
-            <motion.div 
-              ref={sliderRef}
-              className="flex transition-transform duration-500 ease-out gap-6 py-5"
-              style={{ transform: `translateX(-${currentSlide * (100 / itemsPerView)}%)` }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              {events.map((event, index) => (
+        <div className="relative w-full events-swiper-container">
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            spaceBetween={24}
+            slidesPerView={1}
+            navigation={{
+              prevEl: '.swiper-button-prev-custom',
+              nextEl: '.swiper-button-next-custom',
+            }}
+            pagination={{
+              clickable: true,
+              el: '.swiper-pagination-custom',
+            }}
+            autoplay={{
+              delay: 5000,
+              disableOnInteraction: false,
+            }}
+            breakpoints={{
+              640: {
+                slidesPerView: 2,
+                spaceBetween: 20,
+              },
+              1024: {
+                slidesPerView: 5,
+                spaceBetween: 24,
+              },
+            }}
+            className="pb-12"
+          >
+            {events.map((event) => (
+              <SwiperSlide key={event.id}>
                 <motion.div
-                  key={event.id}
                   variants={cardVariants}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, margin: "-100px" }}
                   whileHover={{ y: -10, transition: { duration: 0.3 } }}
-                  className="w-full sm:w-1/2 lg:w-[256px] shrink-0 flex flex-col rounded-2xl lg:rounded-4xl border border-[#E5E7EB] bg-white shadow-sm hover:shadow-xl transition-shadow"
+                  className="flex flex-col rounded-2xl lg:rounded-4xl border border-[#E5E7EB] bg-white shadow-sm hover:shadow-xl transition-shadow h-full"
                 >
                   <Link href={`/event-budaya/${event.slug}`} className="flex flex-col h-full">
                     <div className="relative h-60">
@@ -200,56 +210,35 @@ const EventsSection = () => {
                     </div>
                   </Link>
                 </motion.div>
-              ))}
-            </motion.div>
-          </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
 
-          {/* Navigation Buttons */}
-          {events.length > itemsPerView && (
-            <>
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={prevSlide}
-                disabled={currentSlide === 0}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#D4A017] hover:text-white transition-colors z-10"
-                aria-label="Previous slide"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </motion.button>
-              
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={nextSlide}
-                disabled={currentSlide >= maxSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#D4A017] hover:text-white transition-colors z-10"
-                aria-label="Next slide"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </motion.button>
+          {/* Custom Navigation Buttons */}
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="swiper-button-prev-custom absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-[#D4A017] hover:text-white transition-colors z-10"
+            aria-label="Previous slide"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </motion.button>
+          
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="swiper-button-next-custom absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-[#D4A017] hover:text-white transition-colors z-10"
+            aria-label="Next slide"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </motion.button>
 
-              {/* Pagination Dots */}
-              <div className="flex justify-center gap-2 mt-6">
-                {Array.from({ length: maxSlide + 1 }).map((_, index) => (
-                  <motion.button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                    className={`h-2 rounded-full transition-all ${
-                      currentSlide === index ? 'w-8 bg-[#D4A017]' : 'w-2 bg-[#E5E7EB]'
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          {/* Custom Pagination */}
+          <div className="swiper-pagination-custom flex justify-center gap-2 mt-6"></div>
         </div>
 
         <motion.div
@@ -271,6 +260,28 @@ const EventsSection = () => {
           </Link>
         </motion.div>
       </div>
+
+      <style jsx global>{`
+        .events-swiper-container .swiper-pagination-custom .swiper-pagination-bullet {
+          width: 8px;
+          height: 8px;
+          background: #E5E7EB;
+          opacity: 1;
+          transition: all 0.3s ease;
+        }
+        
+        .events-swiper-container .swiper-pagination-custom .swiper-pagination-bullet-active {
+          width: 32px;
+          background: #D4A017;
+          border-radius: 9999px;
+        }
+
+        .swiper-button-prev-custom.swiper-button-disabled,
+        .swiper-button-next-custom.swiper-button-disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
     </section>
   );
 };

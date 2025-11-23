@@ -160,9 +160,9 @@ export default function ContributorSuccessModal({ isOpen, onClose }: Contributor
                   >
                     {/* Icon */}
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary-red/90 flex items-center justify-center flex-shrink-0 shadow-md">
-                      <svg className="w-5 h-6 sm:w-6 sm:h-7" viewBox="0 0 25 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15.8503 23.7222L11.7184 19.5902L13.0795 18.2291L15.8503 20.9999L21.3434 15.5069L22.7045 16.868L15.8503 23.7222ZM12.0101 13.0277L19.7878 8.16661H4.23229L12.0101 13.0277ZM12.0101 14.9722L4.23229 10.1111V19.8333H9.23923L11.1837 21.7777H4.23229C3.69756 21.7777 3.23981 21.5873 2.85902 21.2065C2.47824 20.8258 2.28784 20.368 2.28784 19.8333V8.16661C2.28784 7.63189 2.47824 7.17414 2.85902 6.79335C3.23981 6.41256 3.69756 6.22217 4.23229 6.22217H19.7878C20.3226 6.22217 20.7803 6.41256 21.1611 6.79335C21.5419 7.17414 21.7323 7.63189 21.7323 8.16661V12.3958L19.7878 14.3402V10.1111L12.0101 14.9722Z" fill="white"/>
-                      </svg>
+                      <svg className='w-5 h-5 sm:w-6 sm:h-6' viewBox="0 0 25 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+                    </svg>
                     </div>
                     
                     {/* Content */}

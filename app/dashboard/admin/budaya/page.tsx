@@ -528,7 +528,7 @@ export default function CulturesListPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 text-sm rounded-lg capitalize ${
-                          culture.status === 'active'
+                          culture.status === 'published'
                             ? 'bg-green-100 text-green-700'
                             : culture.status === 'draft'
                             ? 'bg-gray-100 text-gray-700'
@@ -1074,7 +1074,7 @@ export default function CulturesListPage() {
               <div>
                 <p className="text-sm text-gray-500 mb-1">Status</p>
                 <span className={`inline-block px-3 py-1 rounded-lg font-semibold ${
-                  selectedCulture.status === 'active' ? 'bg-green-100 text-green-700' :
+                  selectedCulture.status === 'published' ? 'bg-green-100 text-green-700' :
                   selectedCulture.status === 'draft' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'
                 }`}>
                   {selectedCulture.status}

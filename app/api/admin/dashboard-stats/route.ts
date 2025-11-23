@@ -221,7 +221,7 @@ export async function GET(request: NextRequest) {
         pendingReports,
         userGrowth,
         contentGrowth,
-        userByRole: userByRole.reduce((acc, item) => {
+        userByRole: userByRole.reduce((acc: any, item: any) => {
           acc[item.role] = item._count;
           return acc;
         }, {} as Record<string, number>),
