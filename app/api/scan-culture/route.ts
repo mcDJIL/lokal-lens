@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { appendFile } from "fs/promises";
+import { put } from "@vercel/blob";
 
 // Helper function to extract object type from name
 function extractObjectType(name: string): string {
@@ -64,28 +65,19 @@ function getCategoryFromObjectType(objectType: string): string | undefined {
 }
 
 // Helper function to save image to disk
-async function saveImageToDisk(base64Image: string, fileName: string): Promise<string> {
-  try {
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'scans');
-    
-    await mkdir(uploadDir, { recursive: true });
-    
-    const timestamp = Date.now();
-    const fileExtension = 'jpg';
-    const uniqueFileName = `${fileName}-${timestamp}.${fileExtension}`;
-    const filePath = path.join(uploadDir, uniqueFileName);
-    
-    await writeFile(filePath, buffer);
-    
-    const publicPath = `/uploads/scans/${uniqueFileName}`;
-    
-    return publicPath;
-  } catch (error) {
-    throw error;
-  }
+async function uploadToVercelBlob(base64Image: string, fileName: string): Promise<string> {
+  const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64Data, "base64");
+
+  const timestamp = Date.now();
+  const uniqueName = `${fileName}-${timestamp}.jpg`;
+
+  const { url } = await put(`scans/${uniqueName}`, buffer, {
+    access: "public",
+    contentType: "image/jpeg",
+  });
+
+  return url; // langsung URL publik
 }
 
 export async function POST(req: Request) {
@@ -324,7 +316,7 @@ PENTING:
           .replace(/\s+/g, '-')
           .substring(0, 50);
         
-        savedImagePath = await saveImageToDisk(image, sanitizedName);
+        savedImagePath = await uploadToVercelBlob(image, sanitizedName);
       } catch (imageError) {
         console.error(`❌ Failed to save image: ${imageError}`);
       }
