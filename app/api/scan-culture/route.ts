@@ -192,8 +192,8 @@ Berikan informasi dalam format JSON berikut (WAJIB menggunakan format ini):
   "rarity": "Sangat Langka / Langka / Umum",
   "unesco": "Terdaftar / Tidak Terdaftar",
   "image": "",
-  "latitude": koordinat lintang dalam format desimal (contoh: -7.8754, atau null jika tidak tahu),
-  "longitude": koordinat bujur dalam format desimal (contoh: 111.4625, atau null jika tidak tahu),
+  "latitude": koordinat lintang dalam format desimal (contoh: -7.8754) data ini bisa di dapat dari Kabupaten jadi kamu tidak perlu titik yang akurat, yang penting berada pada kabupaten tersebut,
+  "longitude": koordinat bujur dalam format desimal (contoh: 111.4625) data ini bisa di dapat dari Kabupaten jadi kamu tidak perlu titik yang akurat, yang penting berada pada kabupaten tersebut,
   "category_slug": "slug kategori yang sesuai dari daftar kategori di atas (contoh: 'tarian', 'kerajinan', 'musik', dll)"
 }
 
@@ -397,6 +397,7 @@ PENTING:
               status: 'published',
               is_endangered: scanResult.rarity === "Sangat Langka",
               thumbnail: savedImagePath,
+              map_embed_url: generateMapEmbedUrl(scanResult.location || "Indonesia"),
             }
           });
           cultureId = newCulture.id;
