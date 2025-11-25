@@ -73,7 +73,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching trending scans:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error" + error },
       { status: 500 }
     );
   }

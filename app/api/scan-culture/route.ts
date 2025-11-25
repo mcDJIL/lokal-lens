@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { appendFile } from "fs/promises";
 
 // Helper function to extract object type from name
 function extractObjectType(name: string): string {
@@ -65,27 +66,24 @@ function getCategoryFromObjectType(objectType: string): string | undefined {
 // Helper function to save image to disk
 async function saveImageToDisk(base64Image: string, fileName: string): Promise<string> {
   try {
-    // Remove data URL prefix if present
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     
-    // Create uploads directory if it doesn't exist
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'scans');
+    
     await mkdir(uploadDir, { recursive: true });
     
-    // Generate unique filename with timestamp
     const timestamp = Date.now();
-    const fileExtension = 'jpg'; // Default to jpg
+    const fileExtension = 'jpg';
     const uniqueFileName = `${fileName}-${timestamp}.${fileExtension}`;
     const filePath = path.join(uploadDir, uniqueFileName);
     
-    // Write file to disk
     await writeFile(filePath, buffer);
     
-    // Return public URL path
-    return `/uploads/scans/${uniqueFileName}`;
+    const publicPath = `/uploads/scans/${uniqueFileName}`;
+    
+    return publicPath;
   } catch (error) {
-    console.error("Error saving image:", error);
     throw error;
   }
 }
@@ -109,9 +107,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Fetch categories dari database untuk membuat prompt lebih spesifik
+    let categoriesText = "";
+    try {
+      const categories = await prisma.category.findMany({
+        select: {
+          name: true,
+          slug: true,
+          description: true,
+        }
+      });
+      
+      
+      if (categories.length > 0) {
+        categoriesText = "\n\nKATEGORI BUDAYA YANG TERSEDIA:\n" + 
+          categories.map(cat => `- ${cat.name} (${cat.slug}): ${cat.description || ''}`).join('\n');
+      }
+    } catch (catError) {
+      console.error(`❌ Error fetching categories: ${catError}`);
+      
+    }
+
     const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `Analisis objek dalam gambar ini dan tentukan apakah ini adalah OBJEK BUDAYA INDONESIA yang ASLI dan SPESIFIK.
+${categoriesText}
 
 PENTING - KRITERIA OBJEK BUDAYA INDONESIA YANG VALID:
 1. Harus merupakan objek fisik budaya tradisional Indonesia (batik, wayang, keris, alat musik tradisional, rumah adat, pakaian adat, tarian, dll)
@@ -123,45 +143,45 @@ JIKA OBJEK BUKAN BUDAYA INDONESIA ATAU TIDAK JELAS:
 Berikan response dengan format:
 {
   "name": "Objek Tidak Dikenali",
+  "subtitle": "",
   "location": "Tidak Diketahui",
   "accuracy": "0%",
   "description": "Objek dalam gambar bukan merupakan objek budaya Indonesia atau tidak dapat diidentifikasi dengan jelas. [Jelaskan singkat apa yang terlihat]",
+  "long_description": "",
+  "meaning": "",
   "rarity": "Tidak Diketahui",
   "unesco": "Tidak Terdaftar",
-  "image": ""
+  "image": "",
+  "latitude": null,
+  "longitude": null,
+  "category_slug": ""
 }
 
 JIKA OBJEK ADALAH BUDAYA INDONESIA YANG VALID:
 Identifikasi JENIS atau VARIAN SPESIFIK dari objek budaya tersebut, jangan hanya kategori umumnya.
 
-CONTOH ANALISIS YANG BENAR:
-- Untuk batik: Identifikasi motifnya seperti "Batik Parang Rusak", "Batik Kawung", "Batik Mega Mendung", "Batik Truntum", dll.
-- Untuk wayang: Identifikasi karakternya seperti "Wayang Kulit Arjuna", "Wayang Golek Cepot", dll.
-- Untuk keris: Identifikasi jenisnya seperti "Keris Luk 5 Jawa Tengah", "Keris Bali Pamor Ngulit Semangka", dll.
-- Untuk tari: Identifikasi tariannya seperti "Tari Kecak Bali", "Tari Saman Aceh", "Tari Jaipong Jawa Barat", dll.
-- Untuk alat musik: Identifikasi spesifiknya seperti "Gamelan Jawa Gong Ageng", "Angklung Buhun", "Sasando Rote", dll.
-- Untuk senjata tradisional: Identifikasi jenisnya seperti "Mandau Dayak Kalimantan", "Badik Bugis Makassar", dll.
-- Untuk rumah adat: Identifikasi spesifiknya seperti "Rumah Gadang Minangkabau", "Tongkonan Toraja", dll.
-- Untuk pakaian adat: Identifikasi lengkapnya seperti "Kebaya Encim Betawi", "Ulos Batak Toba Ragi Hotang", dll.
-
 Berikan informasi dalam format JSON berikut (WAJIB menggunakan format ini):
 
 {
-  "name": "Nama SPESIFIK objek budaya dengan jenis/motif/varian yang jelas NOTE TOLONG NAMANYA JANGAN TERLALU PANJANG SINGKAT SAJA TAPI MEWAKILI BIAR DESCRIPTION YANG LEBIH DETAIL",
-  "location": "Daerah/Provinsi asal spesifik, Indonesia",
+  "name": "Nama SPESIFIK objek budaya dengan jenis/motif/varian yang jelas (SINGKAT, 2-4 kata maksimal)",
+  "subtitle": "Tagline/slogan menarik yang menggambarkan objek ini (contoh: 'Tarian Mistis dari Gerbang Timur Jawa', 'Kain Tenun Warisan Leluhur', max 8 kata)",
+  "location": "Kota/Kabupaten, Provinsi",
   "accuracy": "Persentase akurasi (contoh: 92%)",
-  "description": "Deskripsi detail tentang objek budaya ini, termasuk ciri khas, makna filosofis, dan keunikan dari jenis/motif spesifik ini (minimal 3-4 kalimat yang informatif)",
+  "description": "Deskripsi singkat dan jelas tentang objek budaya ini (2-3 kalimat, fokus pada definisi dan asal-usul)",
+  "long_description": "Penjelasan detail dan mendalam tentang sejarah, latar belakang, dan perkembangan objek budaya ini (4-6 kalimat, mencakup konteks historis, tokoh penting, atau peristiwa terkait)",
+  "meaning": "Makna filosofis, simbolisme, atau nilai budaya yang terkandung dalam objek ini (3-4 kalimat, jelaskan pesan yang ingin disampaikan dan relevansinya)",
   "rarity": "Sangat Langka / Langka / Umum",
   "unesco": "Terdaftar / Tidak Terdaftar",
-  "image": "Gambar referensi objek budaya ini dalam format URL string, TOLONG GAMBAR REFERENSI JANGAN SAMPAI NOT FOUND"
+  "image": "",
+  "latitude": koordinat lintang dalam format desimal (contoh: -7.8754, atau null jika tidak tahu),
+  "longitude": koordinat bujur dalam format desimal (contoh: 111.4625, atau null jika tidak tahu),
+  "category_slug": "slug kategori yang sesuai dari daftar kategori di atas (contoh: 'tarian', 'kerajinan', 'musik', dll)"
 }
 
 PENTING: 
-- Untuk field "image", SELALU berikan string kosong (""). Jangan isi dengan teks placeholder atau deskripsi.
-- Untuk field "name", WAJIB menyebutkan jenis/motif/varian spesifik, JANGAN hanya kategori umum (contoh: SALAH "Batik", BENAR "Batik Parang Rusak")
-- Untuk field "description", jelaskan detail ciri khas dari jenis/motif spesifik tersebut, bukan hanya penjelasan umum
-- Untuk field "location", HARUS mencantumkan "Indonesia" di akhir (contoh: "Yogyakarta, Indonesia")
-- Jika tidak bisa mengidentifikasi jenis spesifik dengan pasti, gunakan format "Objek Tidak Dikenali" seperti yang dijelaskan di atas.`;
+- Jangan sampai ada field yang kosong kecuali "image" (harus "") dan latitude/longitude (boleh null jika tidak tahu)
+- Pastikan "name" SINGKAT dan spesifik
+- "category_slug" WAJIB diisi dengan slug kategori yang sesuai dari daftar kategori yang tersedia`;
 
     const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
@@ -186,35 +206,104 @@ PENTING:
     // Extract JSON from response
     let scanResult;
     try {
-      // Try to find JSON in the response
       const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         scanResult = JSON.parse(jsonMatch[0]);
       } else {
-        // Fallback if no JSON found
         scanResult = {
           name: "Objek Tidak Dikenali",
+          subtitle: "",
           location: "Tidak Diketahui",
           accuracy: "0%",
           description: textResponse || "Tidak dapat mengidentifikasi objek budaya.",
+          long_description: "",
+          meaning: "",
           rarity: "Tidak Diketahui",
           unesco: "Tidak Terdaftar",
           image: "",
+          latitude: null,
+          longitude: null,
+          category_slug: "",
         };
       }
     } catch (parseError) {
-      console.error("JSON Parse Error:", parseError);
       scanResult = {
         name: "Objek Tidak Dikenali",
+        subtitle: "",
         location: "Tidak Diketahui",
         accuracy: "0%",
         description: textResponse || "Tidak dapat mengidentifikasi objek budaya.",
+        long_description: "",
+        meaning: "",
         rarity: "Tidak Diketahui",
         unesco: "Tidak Terdaftar",
         image: "",
+        latitude: null,
+        longitude: null,
+        category_slug: "",
       };
     }
 
+    // 38 Provinsi Indonesia (resmi)
+    const indonesianProvinces = [
+      // Sumatera (10)
+      'aceh',
+      'sumatera utara', 'sumatra utara',
+      'sumatera barat', 'sumatra barat',
+      'riau',
+      'kepulauan riau',
+      'jambi',
+      'sumatera selatan', 'sumatra selatan',
+      'kepulauan bangka belitung', 'bangka belitung',
+      'bengkulu',
+      'lampung',
+      
+      // Jawa (6)
+      'banten',
+      'dki jakarta', 'jakarta',
+      'jawa barat',
+      'jawa tengah',
+      'di yogyakarta', 'yogyakarta', 'jogja',
+      'jawa timur',
+      
+      // Bali & Nusa Tenggara (3)
+      'bali',
+      'nusa tenggara barat', 'ntb',
+      'nusa tenggara timur', 'ntt',
+      
+      // Kalimantan (5)
+      'kalimantan barat',
+      'kalimantan tengah',
+      'kalimantan selatan',
+      'kalimantan timur',
+      'kalimantan utara',
+      
+      // Sulawesi (6)
+      'sulawesi utara',
+      'sulawesi tengah',
+      'sulawesi selatan',
+      'sulawesi tenggara',
+      'gorontalo',
+      'sulawesi barat',
+      
+      // Maluku (2)
+      'maluku',
+      'maluku utara',
+      
+      // Papua (6)
+      'papua',
+      'papua barat',
+      'papua selatan',
+      'papua tengah',
+      'papua pegunungan',
+      'papua barat daya'
+    ];
+    
+    const locationLower = scanResult.location.toLowerCase();
+    const hasIndonesianProvince = indonesianProvinces.some(province => 
+      locationLower.includes(province)
+    ) || locationLower.includes('indonesia');
+    
     // Validasi apakah ini objek budaya Indonesia yang valid
     const isValidCulture = scanResult.name !== "Objek Tidak Dikenali" && 
                           scanResult.accuracy !== "0%" &&
@@ -223,7 +312,7 @@ PENTING:
                           !scanResult.description.toLowerCase().includes("bukan objek budaya") &&
                           !scanResult.description.toLowerCase().includes("tidak dikenali sebagai budaya") &&
                           scanResult.location !== "Tidak Diketahui" &&
-                          scanResult.location.toLowerCase().includes("indonesia");
+                          hasIndonesianProvince;
 
     // Simpan gambar scan user jika valid
     let savedImagePath = null;
@@ -233,58 +322,62 @@ PENTING:
           .toLowerCase()
           .replace(/[^\w\s-]/g, '')
           .replace(/\s+/g, '-')
-          .substring(0, 50); // Limit filename length
+          .substring(0, 50);
         
         savedImagePath = await saveImageToDisk(image, sanitizedName);
-        console.log("Image saved successfully:", savedImagePath);
       } catch (imageError) {
-        console.error("Failed to save image:", imageError);
-        // Continue even if image save fails
+        console.error(`❌ Failed to save image: ${imageError}`);
       }
+    } else {
+      console.log("⚠️ Skipping image save - invalid culture");
     }
 
     // Hanya simpan ke database jika objek adalah budaya Indonesia yang valid
-    if (isValidCulture) {
+    if (isValidCulture) {      
       try {
         const objectType = extractObjectType(scanResult.name);
-        const categorySlug = getCategoryFromObjectType(objectType);
-        const province = scanResult.location?.split(',')[1]?.trim() || null;
+
+        const categorySlug = scanResult.category_slug || getCategoryFromObjectType(objectType);
         
-        // Lookup category by slug
+        const province = scanResult.location?.split(',')[1]?.trim() || null;
+        const city = scanResult.location?.split(',')[0]?.trim() || "";
+        
+        // Lookup category by slug (prioritas dari AI response)
         let categoryId: number | null = null;
         if (categorySlug) {
           const categoryRecord = await prisma.category.findFirst({
             where: { slug: categorySlug },
           });
           categoryId = categoryRecord?.id || null;
+        } else {
+          console.log("⚠️ No category slug provided");
         }
         
-        // Cek apakah culture dengan nama serupa sudah ada
         const existingCulture = await prisma.culture.findFirst({
           where: {
-            OR: [
-              { name: { contains: scanResult.name } },
-              { name: { contains: objectType } }
-            ]
+            name: scanResult.name
           }
         });
 
         let cultureId = existingCulture?.id;
-
-        // Jika culture belum ada, buat culture baru
         if (!existingCulture) {
           const newCulture = await prisma.culture.create({
             data: {
               name: scanResult.name,
               slug: scanResult.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]/g, ''),
+              subtitle: scanResult.subtitle || null,
               description: scanResult.description || "Objek budaya Indonesia",
+              long_description: scanResult.long_description || null,
+              meaning: scanResult.meaning || null,
               category_id: categoryId,
               location: scanResult.location || "Indonesia",
               province: province || "Indonesia",
-              city: scanResult.location?.split(',')[0]?.trim() || "",
+              city: city,
+              latitude: scanResult.latitude || null,
+              longitude: scanResult.longitude || null,
               status: 'published',
               is_endangered: scanResult.rarity === "Sangat Langka",
-              thumbnail: savedImagePath, // Simpan gambar scan user sebagai thumbnail
+              thumbnail: savedImagePath,
             }
           });
           cultureId = newCulture.id;
@@ -301,48 +394,27 @@ PENTING:
                 }
               });
             } catch (imageError) {
-              console.error("Failed to save reference image:", imageError);
+              console.error(`❌ Failed to save reference image: ${imageError}`);
             }
           }
         } else {
-          // Jika culture sudah ada, update thumbnail dengan gambar scan terbaru
           await prisma.culture.update({
             where: { id: existingCulture.id },
             data: {
-              thumbnail: savedImagePath,
+              subtitle: scanResult.subtitle || existingCulture.subtitle,
+              long_description: scanResult.long_description || existingCulture.long_description,
+              meaning: scanResult.meaning || existingCulture.meaning,
+              latitude: scanResult.latitude || existingCulture.latitude,
+              longitude: scanResult.longitude || existingCulture.longitude,
+              thumbnail: savedImagePath || existingCulture.thumbnail,
             }
           });
-
-          // Simpan gambar referensi jika ada dan belum ada di culture_images
-          if (scanResult.image && scanResult.image !== "") {
-            const existingImage = await prisma.cultureImage.findFirst({
-              where: {
-                culture_id: existingCulture.id,
-                image_url: scanResult.image,
-              }
-            });
-
-            if (!existingImage) {
-              try {
-                await prisma.cultureImage.create({
-                  data: {
-                    culture_id: existingCulture.id,
-                    image_url: scanResult.image,
-                    alt_text: `Referensi ${scanResult.name}`,
-                    is_primary: false,
-                  }
-                });
-              } catch (imageError) {
-                console.error("Failed to save reference image:", imageError);
-              }
-            }
-          }
         }
 
         // Simpan scan history
-        await prisma.scanHistory.create({
+        const scanHistory = await prisma.scanHistory.create({
           data: {
-            culture_id: cultureId,
+            culture_id: cultureId!,
             object_name: scanResult.name,
             object_type: objectType,
             category_id: categoryId,
@@ -352,13 +424,12 @@ PENTING:
             description: scanResult.description,
             scan_result: JSON.stringify(scanResult),
           }
-        });
+        });  
       } catch (dbError) {
-        console.error("Database Error:", dbError);
-        // Tetap return hasil scan meskipun gagal menyimpan ke database
+        if ((dbError as any).code) {
+          console.error(`Error code: ${(dbError as any).code}`);
+        }
       }
-    } else {
-      console.log("Objek bukan budaya Indonesia yang valid, tidak disimpan ke database:", scanResult.name);
     }
 
     // Tambahkan path gambar yang disimpan ke response
@@ -368,11 +439,10 @@ PENTING:
     };
 
     return NextResponse.json(responseData);
-  } catch (error) {
-    console.error("SERVER ERROR:", error);
+  } catch (error) {    
     return NextResponse.json(
       {
-        error: "Internal Server Error",
+        error: "Internal Server Error: " + (error as Error).message,
         detail: String(error),
       },
       { status: 500 }

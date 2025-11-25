@@ -185,7 +185,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching recommendations:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error" + error },
       { status: 500 }
     );
   }
