@@ -6,7 +6,7 @@ import Image from 'next/image';
 interface QuestionCardProps {
   questionNumber: number;
   question: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   instruction: string;
 }
 
@@ -19,19 +19,21 @@ export default function QuestionCard({ questionNumber, question, imageUrl, instr
       transition={{ duration: 0.5, delay: 0.2 }}
     >
       <div className="flex flex-col lg:flex-row">
-        <motion.div 
-          className="relative w-full lg:w-[448px] aspect-video lg:aspect-auto lg:h-[252px]"
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Image
-            src={imageUrl}
-            alt={`Question ${questionNumber}`}
-            fill
-            className="object-cover lg:rounded-l-3xl"
-            sizes="(max-width: 1024px) 100vw, 448px"
-          />
-        </motion.div>
+        {imageUrl && (
+          <motion.div 
+            className="relative w-full lg:w-[448px] aspect-video lg:aspect-auto lg:h-[252px]"
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Image
+              src={imageUrl}
+              alt={`Question ${questionNumber}`}
+              fill
+              className="object-cover lg:rounded-l-3xl"
+              sizes="(max-width: 1024px) 100vw, 448px"
+            />
+          </motion.div>
+        )}
 
         <div className="flex-1 p-6 sm:p-8 lg:p-6 flex flex-col justify-center gap-2">
           <motion.p 

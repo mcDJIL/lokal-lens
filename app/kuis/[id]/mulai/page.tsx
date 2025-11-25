@@ -186,7 +186,7 @@ export default function QuizMulaiPage({ params }: { params: Promise<{ id: string
           <QuestionCard
             questionNumber={currentQuestionIndex + 1}
             question={currentQuestion.question}
-            imageUrl={currentQuestion.image_url || 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80'}
+            imageUrl={currentQuestion.image_url}
             instruction="Pilih salah satu jawaban yang paling tepat di bawah ini."
           />
         </div>
