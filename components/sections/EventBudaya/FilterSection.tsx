@@ -155,8 +155,12 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
 
         {isOpen && (
           <div 
-            className="absolute top-full left-0 mt-2 bg-white border border-[#EAE3D9] rounded-lg shadow-xl z-[9999] min-w-[200px] max-w-[280px] max-h-[320px] overflow-y-auto"
-            style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
+            className="absolute top-full left-0 mt-2 bg-white border border-[#EAE3D9] rounded-lg shadow-xl z-9999 min-w-[200px] max-w-[280px] max-h-80 overflow-y-auto"
+            style={{
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              maxHeight: '50vh', // Ensure dropdown doesn't exceed half the viewport height
+              overflowY: 'auto', // Enable scrolling when content exceeds maxHeight
+            }}
           >
             {id === 'category' ? (
               <>
@@ -222,9 +226,9 @@ export default function FilterSection({ viewMode, setViewMode, filters, onFilter
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+    <div className="overflow-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
       {/* Filter Buttons */}
-      <div ref={dropdownRef} className="flex items-center gap-3 pb-2 sm:pb-0 w-full sm:w-auto" style={{ overflow: 'visible' }}>
+      <div ref={dropdownRef} className="overflow-auto flex items-center gap-3 pb-2 sm:pb-0 w-full sm:w-auto overflow-x-auto" style={{ overflow: 'visible' }}>
         <FilterButton 
           id="province" 
           options={provinces}
