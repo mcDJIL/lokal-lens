@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 
 interface SearchFilterSectionProps {
   searchQuery: string;
@@ -37,6 +38,8 @@ const SearchFilterSection = ({
     'Aceh',
   ];
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   return (
     <motion.section 
       initial={{ opacity: 0, y: 20 }}
@@ -44,9 +47,86 @@ const SearchFilterSection = ({
       transition={{ duration: 0.5, delay: 0.3 }}
       className="w-full bg-white border-t border-[rgba(0,0,0,0.1)]"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20 py-4 sm:py-6">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4 p-4 border border-[rgba(0,0,0,0.1)] rounded-xl bg-white">
+          <div className="sm:hidden">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full flex items-center justify-between px-4 py-2 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] rounded-lg text-[#1A1A1A] text-sm font-medium"
+            >
+              Filter
+              <svg
+                className={`w-5 h-5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isDropdownOpen && (
+              <div className="mt-2 p-4 bg-white border border-[rgba(0,0,0,0.1)] rounded-lg shadow-md">
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari nama budaya..."
+                    className="w-full px-4 py-2 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] rounded-lg text-[#887D63] text-sm outline-none focus:ring-2 focus:ring-primary-gold"
+                  />
+
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] rounded-lg text-[#1A1A1A] text-sm"
+                  >
+                    <option value="">Semua Status</option>
+                    <option value="pending">Menunggu</option>
+                    <option value="approved">Disetujui</option>
+                    <option value="rejected">Ditolak</option>
+                  </select>
+
+                  <select
+                    value={selectedThreatType}
+                    onChange={(e) => setSelectedThreatType(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] rounded-lg text-[#1A1A1A] text-sm"
+                  >
+                    <option value="">Semua Ancaman</option>
+                    <option value="Modernisasi">Modernisasi</option>
+                    <option value="Kurangnya Minat">Kurangnya Minat</option>
+                    <option value="Urbanisasi">Urbanisasi</option>
+                    <option value="Tekanan Ekonomi">Tekanan Ekonomi</option>
+                    <option value="Bencana Alam">Bencana Alam</option>
+                    <option value="Konflik">Konflik</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+
+                  <select
+                    value={selectedProvince}
+                    onChange={(e) => setSelectedProvince(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] rounded-lg text-[#1A1A1A] text-sm"
+                  >
+                    {provinces.map((prov) => (
+                      <option key={prov} value={prov === 'Semua Provinsi' ? '' : prov}>
+                        {prov}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={onReset}
+                    className="w-full px-4 py-2 bg-red-50 text-primary-red text-sm font-medium rounded-lg hover:bg-red-100"
+                  >
+                    Hapus Filter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="hidden sm:flex items-center gap-4 p-4 border border-[rgba(0,0,0,0.1)] rounded-xl bg-white">
             <div className="flex-1">
               <div className="flex items-center h-12 rounded-lg overflow-hidden">
                 <div className="flex items-center justify-center px-4 h-full bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] border-r-0 rounded-l-lg">
@@ -59,7 +139,7 @@ const SearchFilterSection = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari nama budaya..."
-                  className="flex-1 h-full px-4 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] border-l-0 rounded-r-lg text-[#887D63] text-base font-normal outline-none focus:ring-2 focus:ring-primary-gold focus:border-primary-gold"
+                  className="flex-1 h-full px-4 bg-[#F7F7F7] border border-[rgba(0,0,0,0.1)] border-l-0 rounded-r-lg text-[#887D63] text-sm sm:text-base font-normal outline-none focus:ring-2 focus:ring-primary-gold focus:border-primary-gold"
                 />
               </div>
             </div>
@@ -69,7 +149,7 @@ const SearchFilterSection = ({
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-sm font-medium leading-5 border-none outline-none appearance-none pr-10"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-xs sm:text-sm font-medium leading-5 border-none outline-none appearance-none pr-8 sm:pr-10"
                 >
                   <option value="">Semua Status</option>
                   <option value="pending">Menunggu</option>
@@ -82,7 +162,7 @@ const SearchFilterSection = ({
                 <select
                   value={selectedThreatType}
                   onChange={(e) => setSelectedThreatType(e.target.value)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-sm font-medium leading-5 border-none outline-none appearance-none pr-10"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-xs sm:text-sm font-medium leading-5 border-none outline-none appearance-none pr-8 sm:pr-10"
                 >
                   <option value="">Semua Ancaman</option>
                   <option value="Modernisasi">Modernisasi</option>
@@ -99,7 +179,7 @@ const SearchFilterSection = ({
                 <select
                   value={selectedProvince}
                   onChange={(e) => setSelectedProvince(e.target.value)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-sm font-medium leading-5 border-none outline-none appearance-none pr-10"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[#F7F7F7] hover:bg-gray-200 transition-colors cursor-pointer text-[#1A1A1A] text-xs sm:text-sm font-medium leading-5 border-none outline-none appearance-none pr-8 sm:pr-10"
                 >
                   {provinces.map((prov) => (
                     <option key={prov} value={prov === 'Semua Provinsi' ? '' : prov}>
@@ -113,9 +193,9 @@ const SearchFilterSection = ({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onReset}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
               >
-                <span className="text-primary-red text-sm font-medium leading-5">Hapus Filter</span>
+                <span className="text-primary-red text-xs sm:text-sm font-medium leading-5">Hapus Filter</span>
                 <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5.33329 17.833L4.16663 16.6663L8.83329 11.9997L4.16663 7.33301L5.33329 6.16634L9.99996 10.833L14.6666 6.16634L15.8333 7.33301L11.1666 11.9997L15.8333 16.6663L14.6666 17.833L9.99996 13.1663L5.33329 17.833Z" fill="#C0392B"/>
                 </svg>

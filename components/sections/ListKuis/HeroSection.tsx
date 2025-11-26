@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 const HeroSection = () => {
   return (
     <section className="w-full bg-[url('/assets/img/hero-kuis.png')] bg-cover bg-center bg-[rgba(0,108,132,0.05)] py-12 sm:py-16 lg:py-20">
-      <div className="absolute inset-0 bg-white/80"></div>
+      <div className="absolute inset-0 bg-white/80 h-[400px]"></div>
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

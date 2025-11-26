@@ -108,7 +108,6 @@ export async function POST(request: NextRequest) {
       thumbnail,
       category_id,
       difficulty,
-      time_limit,
       status,
       questions
     } = body;
@@ -133,7 +132,6 @@ export async function POST(request: NextRequest) {
         thumbnail,
         category_id: category_id || null,
         difficulty: difficulty || 'medium',
-        time_limit,
         status: status || 'draft',
         total_questions: questions?.length || 0,
         questions: questions ? {

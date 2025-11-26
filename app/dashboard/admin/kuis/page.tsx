@@ -856,21 +856,6 @@ export default function QuizzesPage() {
                   <option value="hard">Hard</option>
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Batas Waktu (menit)
-                </label>
-                <input
-                  type="number"
-                  name="time_limit"
-                  value={formData.time_limit}
-                  onChange={handleFormChange}
-                  min="0"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-green/20 focus:border-primary-green transition-all"
-                  placeholder="15 (kosongkan untuk tanpa batas)"
-                />
-              </div>
             </div>
           </div>
 
@@ -1126,13 +1111,6 @@ export default function QuizzesPage() {
               <div>
                 <p className="text-sm text-gray-500 mb-1">Jumlah Pertanyaan</p>
                 <p className="font-semibold text-gray-900">❓ {selectedQuiz.questions?.length || 0} soal</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Batas Waktu</p>
-                <p className="font-semibold text-gray-900">
-                  ⏱️ {selectedQuiz.time_limit ? `${selectedQuiz.time_limit} menit` : 'Tanpa batas'}
-                </p>
               </div>
             </div>
 
