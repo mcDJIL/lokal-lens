@@ -38,7 +38,8 @@ export default function LaporBudayaTerancamPage() {
   useEffect(() => {
     if (formData.lokasi && formData.lokasi.length > 3) {
       const encodedLocation = encodeURIComponent(formData.lokasi);
-      setMapUrl(`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedLocation}&zoom=14`);
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      setMapUrl(`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedLocation}&zoom=14`);
     }
   }, [formData.lokasi]);
 
