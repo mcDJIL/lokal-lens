@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     }));
 
     const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-lite",
       contents,
     });
 
